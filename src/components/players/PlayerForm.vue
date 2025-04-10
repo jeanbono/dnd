@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, defineEmits, defineProps } from 'vue';
+import { ref, defineEmits, defineProps } from 'vue';
 import { type Player } from '../../stores/player';
 
 const props = defineProps<{
@@ -9,7 +9,6 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   add: [];
-  save: [id: string];
   cancel: [];
 }>();
 
@@ -20,14 +19,8 @@ const playerData = ref<Partial<Player>>({
   ...props.initialData
 });
 
-const isEditing = computed(() => !!props.editingPlayer);
-
 function handleSubmit() {
-  if (isEditing.value && props.editingPlayer) {
-    emit('save', props.editingPlayer);
-  } else {
-    emit('add');
-  }
+  emit('add');
 }
 
 function handleCancel() {
@@ -40,7 +33,7 @@ defineExpose({ playerData });
 
 <template>
   <div class="bg-gray-100 p-4 rounded-md mb-6">
-    <h3 class="font-semibold mb-3">{{ isEditing ? 'Modifier le Joueur' : 'Ajouter un Joueur' }}</h3>
+    <h3 class="font-semibold mb-3">Ajouter un Joueur</h3>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div>
         <label class="block text-sm font-medium mb-1">Nom</label>
@@ -73,10 +66,9 @@ defineExpose({ playerData });
         @click="handleSubmit" 
         class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md cursor-pointer"
       >
-        {{ isEditing ? 'Enregistrer les Modifications' : 'Ajouter le Joueur' }}
+        Ajouter le Joueur
       </button>
       <button 
-        v-if="isEditing" 
         @click="handleCancel" 
         class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md cursor-pointer"
       >

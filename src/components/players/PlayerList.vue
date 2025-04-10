@@ -8,8 +8,8 @@ import PlayerCard from './PlayerCard.vue';
 const store = usePlayerStore();
 const containerRef = ref<HTMLElement | null>(null);
 const isAddingPlayer = ref(false);
-const editingPlayer = ref<string | null>(null);
 const tempPlayerData = ref<Partial<Player>>({});
+const playerFormRef = ref<InstanceType<typeof PlayerForm> | null>(null);
 
 onMounted(() => {
   setupSortable();
@@ -37,27 +37,15 @@ function setupSortable() {
 function removePlayer(id: string) {
   if (confirm('Êtes-vous sûr de vouloir supprimer ce joueur ?')) {
     store.removePlayer(id);
-    
-    // If we were editing this player, reset the form
-    if (editingPlayer.value === id) {
-      resetForm();
-    }
   }
 }
 
-function editPlayer(player: Player) {
-  editingPlayer.value = player.id;
-  tempPlayerData.value = { ...player };
-  isAddingPlayer.value = true;
-}
-
-function cancelEditingPlayer() {
-  resetForm();
+function savePlayer(id: string, data: Partial<Player>) {
+  store.updatePlayer(id, data);
 }
 
 function resetForm() {
   isAddingPlayer.value = false;
-  editingPlayer.value = null;
   tempPlayerData.value = {
     name: '',
     initiative: 0,
@@ -67,17 +55,14 @@ function resetForm() {
 }
 
 function handleFormAdd() {
-  const playerData = tempPlayerData.value;
-  
-  if (playerData.name && playerData.initiative !== undefined && playerData.dexterity !== undefined) {
-    store.addPlayer(playerData as Omit<Player, 'id'>);
-    resetForm();
+  if (playerFormRef.value && playerFormRef.value.playerData) {
+    const playerData = playerFormRef.value.playerData;
+    
+    if (playerData.name && playerData.initiative !== undefined && playerData.dexterity !== undefined) {
+      store.addPlayer(playerData as Omit<Player, 'id'>);
+      resetForm();
+    }
   }
-}
-
-function handleFormSave(id: string) {
-  store.updatePlayer(id, tempPlayerData.value);
-  resetForm();
 }
 </script>
 
@@ -95,15 +80,14 @@ function handleFormSave(id: string) {
       </div>
     </div>
     
-    <!-- Player Form -->
+    <!-- Player Form for adding new players only -->
     <PlayerForm 
       v-if="isAddingPlayer" 
-      v-model:playerData="tempPlayerData"
-      :editingPlayer="editingPlayer"
+      :editingPlayer="null"
       :initialData="tempPlayerData"
       @add="handleFormAdd"
-      @save="handleFormSave"
-      @cancel="cancelEditingPlayer"
+      @cancel="resetForm"
+      ref="playerFormRef"
     />
     
     <!-- Player List with Drag and Drop -->
@@ -112,7 +96,7 @@ function handleFormSave(id: string) {
     </div>
     
     <div v-else class="mb-4 p-3 bg-blue-50 rounded-md text-sm text-blue-700">
-      <p>Glissez les joueurs pour les réorganiser.</p>
+      <p>Glissez les joueurs pour les réorganiser. Cliquez sur "Modifier" pour éditer un joueur directement.</p>
     </div>
     
     <div ref="containerRef" class="space-y-3">
@@ -120,7 +104,7 @@ function handleFormSave(id: string) {
         v-for="player in store.players"
         :key="player.id"
         :player="player"
-        @edit="editPlayer"
+        @save="savePlayer"
         @remove="removePlayer"
       />
     </div>
