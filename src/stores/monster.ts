@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface Monster {
@@ -61,16 +61,45 @@ export const useMonsterStore = defineStore('monsters', () => {
   const savedMonsters = localStorage.getItem('dnd-combat-tracker-monsters');
   const initialMonsters = savedMonsters ? JSON.parse(savedMonsters) : [];
   
+  // State
   const monsters = ref<Monster[]>(initialMonsters);
   const searchResults = ref<MonsterSearchResult[]>([]);
   const isSearching = ref(false);
   const searchError = ref<string | null>(null);
+  const isAddingMonster = ref(false);
+  const editingMonsterId = ref<string | null>(null);
+  const showStatsForMonster = ref<Record<string, boolean>>({});
+  const collapsedMonsters = ref<Set<string>>(new Set());
+  const rollResult = ref<{ monsterId: string, roll: number, modifier: number, total: number } | null>(null);
+  
+  const tempMonsterData = ref<Partial<Monster>>({
+    name: '',
+    initiative: 0,
+    hp: 0,
+    maxHp: 0,
+    ac: 0,
+    notes: '',
+    strength: 10,
+    dexterity: 10,
+    constitution: 10,
+    intelligence: 10,
+    wisdom: 10,
+    charisma: 10
+  });
+  
+  // Computed properties
+  const isEditingAnyMonster = computed(() => editingMonsterId.value !== null);
+  const currentEditingMonster = computed(() => {
+    if (!editingMonsterId.value) return null;
+    return monsters.value.find(monster => monster.id === editingMonsterId.value) || null;
+  });
   
   // Watch for changes to monsters and save to localStorage
   watch(monsters, (newMonsters) => {
     localStorage.setItem('dnd-combat-tracker-monsters', JSON.stringify(newMonsters));
   }, { deep: true });
 
+  // Monster management functions
   function addMonster(monsterData: Omit<Monster, 'id'>) {
     // Create default monster data with ability scores set to 10
     const defaultData: Partial<Monster> = {
@@ -94,12 +123,17 @@ export const useMonsterStore = defineStore('monsters', () => {
       ...defaultData as Omit<Monster, 'id'>
     };
     monsters.value.push(monster);
+    resetForm();
   }
   
   function removeMonster(id: string) {
-    const index = monsters.value.findIndex(monster => monster.id === id);
-    if (index !== -1) {
-      monsters.value.splice(index, 1);
+    if (confirm('Êtes-vous sûr de vouloir supprimer ce monstre ?')) {
+      monsters.value = monsters.value.filter(monster => monster.id !== id);
+      
+      // If we were editing this monster, reset the form
+      if (editingMonsterId.value === id) {
+        resetForm();
+      }
     }
   }
   
@@ -107,6 +141,19 @@ export const useMonsterStore = defineStore('monsters', () => {
     const monster = monsters.value.find(m => m.id === id);
     if (monster) {
       Object.assign(monster, updates);
+      
+      // If we're updating the monster we're currently editing, also update the temp data
+      if (editingMonsterId.value === id) {
+        Object.assign(tempMonsterData.value, updates);
+      }
+    }
+  }
+  
+  function updateMonsterHp(id: string, change: number) {
+    const monster = monsters.value.find(m => m.id === id);
+    if (monster) {
+      const newHp = Math.max(0, Math.min(monster.maxHp, monster.hp + change));
+      updateMonster(id, { hp: newHp });
     }
   }
   
@@ -114,6 +161,71 @@ export const useMonsterStore = defineStore('monsters', () => {
     monsters.value = newOrder;
   }
   
+  // UI state management
+  function toggleCollapse(monsterId: string) {
+    if (collapsedMonsters.value.has(monsterId)) {
+      collapsedMonsters.value.delete(monsterId);
+    } else {
+      collapsedMonsters.value.add(monsterId);
+    }
+  }
+  
+  function isCollapsed(monsterId: string): boolean {
+    return collapsedMonsters.value.has(monsterId);
+  }
+  
+  function toggleStats(monsterId: string) {
+    showStatsForMonster.value[monsterId] = !showStatsForMonster.value[monsterId];
+  }
+  
+  function isStatsShown(monsterId: string): boolean {
+    return !!showStatsForMonster.value[monsterId];
+  }
+  
+  // Editing functions
+  function startAddingMonster() {
+    resetForm();
+    isAddingMonster.value = true;
+  }
+  
+  function startEditingMonster(id: string) {
+    const monster = monsters.value.find(m => m.id === id);
+    if (monster) {
+      editingMonsterId.value = id;
+      tempMonsterData.value = { ...monster };
+    }
+  }
+  
+  function cancelEditing() {
+    resetForm();
+  }
+  
+  function saveEditedMonster() {
+    if (editingMonsterId.value) {
+      updateMonster(editingMonsterId.value, tempMonsterData.value);
+      resetForm();
+    }
+  }
+  
+  function resetForm() {
+    isAddingMonster.value = false;
+    editingMonsterId.value = null;
+    tempMonsterData.value = {
+      name: '',
+      initiative: 0,
+      hp: 0,
+      maxHp: 0,
+      ac: 0,
+      notes: '',
+      strength: 10,
+      dexterity: 10,
+      constitution: 10,
+      intelligence: 10,
+      wisdom: 10,
+      charisma: 10
+    };
+  }
+
   // Calculate ability score modifier according to D&D 5e rules
   function calculateAbilityModifier(score: number): number {
     return Math.floor((score - 10) / 2);
@@ -121,7 +233,7 @@ export const useMonsterStore = defineStore('monsters', () => {
   
   // Get formatted ability score display
   function getAbilityScoreDisplay(score?: number): string {
-    if (!score) return '—';
+    if (!score) return '— (±0)';
     const modifier = calculateAbilityModifier(score);
     const sign = modifier >= 0 ? '+' : '';
     return `${score} (${sign}${modifier})`;
@@ -141,11 +253,55 @@ export const useMonsterStore = defineStore('monsters', () => {
       const initiative = d20Roll + dexMod;
       updateMonster(id, { initiative });
       
+      // Set roll result for animation
+      rollResult.value = {
+        monsterId: id,
+        roll: d20Roll,
+        modifier: dexMod,
+        total: initiative
+      };
+      
+      // Clear the roll result after 3 seconds
+      setTimeout(() => {
+        rollResult.value = null;
+      }, 3000);
+      
       return { roll: d20Roll, modifier: dexMod, total: initiative };
     }
     return null;
   }
   
+  function rollAllInitiatives() {
+    monsters.value.forEach(monster => {
+      rollInitiative(monster.id);
+    });
+  }
+
+  function toggleAddingMonster() {
+    isAddingMonster.value = !isAddingMonster.value;
+    if (isAddingMonster.value) {
+      // Réinitialiser les données temporaires lorsqu'on active le mode ajout
+      resetForm();
+    }
+  }
+
+  function addMonsterFromTemp() {
+    const monsterData = tempMonsterData.value;
+    
+    if (monsterData.name && monsterData.hp !== undefined && monsterData.maxHp !== undefined) {
+      addMonster(monsterData as Omit<Monster, 'id'>);
+      resetForm();
+    }
+  }
+
+  function getMonsterById(id: string): Monster | undefined {
+    return monsters.value.find(m => m.id === id);
+  }
+
+  function getAbilityModifier(score: number): number {
+    return calculateAbilityModifier(score);
+  }
+
   async function searchMonsters(name: string) {
     if (!name.trim()) {
       searchResults.value = [];
@@ -234,18 +390,56 @@ export const useMonsterStore = defineStore('monsters', () => {
   }
 
   return {
+    // State
     monsters,
     searchResults,
     isSearching,
     searchError,
+    isAddingMonster,
+    editingMonsterId,
+    showStatsForMonster,
+    collapsedMonsters,
+    rollResult,
+    tempMonsterData,
+    
+    // Computed
+    isEditingAnyMonster,
+    currentEditingMonster,
+    
+    // Monster management
     addMonster,
     removeMonster,
     updateMonster,
+    updateMonsterHp,
     reorderMonsters,
+    
+    // UI state management
+    toggleCollapse,
+    isCollapsed,
+    toggleStats,
+    isStatsShown,
+    
+    // Editing
+    startAddingMonster,
+    startEditingMonster,
+    cancelEditing,
+    saveEditedMonster,
+    resetForm,
+    
+    // Abilities and initiative
     calculateAbilityModifier,
     getAbilityScoreDisplay,
     rollInitiative,
+    rollAllInitiatives,
+    
+    // API
     searchMonsters,
-    addMonsterFromApi
+    addMonsterFromApi,
+    
+    // Additional functions
+    toggleAddingMonster,
+    addMonsterFromTemp,
+    getMonsterById,
+    getAbilityModifier
   };
 });

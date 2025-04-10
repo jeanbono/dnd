@@ -1,50 +1,22 @@
 <script setup lang="ts">
-import { ref, computed, defineEmits, defineProps } from 'vue';
-import { type Monster } from '../../stores/monster';
+import { computed } from 'vue';
+import { useMonsterStore } from '../../stores/monster';
 
-const props = defineProps<{
-  editingMonster: string | null;
-  initialData?: Partial<Monster>;
-}>();
-
-const emit = defineEmits<{
-  add: [];
-  save: [id: string];
-  cancel: [];
-}>();
-
-const monsterData = ref<Partial<Monster>>({
-  name: '',
-  initiative: 0,
-  hp: 0,
-  maxHp: 0,
-  ac: 0,
-  notes: '',
-  strength: 10,
-  dexterity: 10,
-  constitution: 10,
-  intelligence: 10,
-  wisdom: 10,
-  charisma: 10,
-  ...props.initialData
-});
-
-const isEditing = computed(() => !!props.editingMonster);
+const monsterStore = useMonsterStore();
+const isEditing = computed(() => !!monsterStore.editingMonsterId);
+const monsterData = computed(() => monsterStore.tempMonsterData);
 
 function handleSubmit() {
-  if (isEditing.value && props.editingMonster) {
-    emit('save', props.editingMonster);
+  if (isEditing.value) {
+    monsterStore.saveEditedMonster();
   } else {
-    emit('add');
+    monsterStore.addMonsterFromTemp();
   }
 }
 
 function handleCancel() {
-  emit('cancel');
+  monsterStore.cancelEditing();
 }
-
-// Expose monsterData to parent component
-defineExpose({ monsterData });
 </script>
 
 <template>
@@ -161,7 +133,6 @@ defineExpose({ monsterData });
         {{ isEditing ? 'Enregistrer les Modifications' : 'Ajouter le Monstre' }}
       </button>
       <button 
-        v-if="isEditing" 
         @click="handleCancel" 
         class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md cursor-pointer"
       >

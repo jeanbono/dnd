@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { type Monster, useMonsterStore } from '../../stores/monster';
+import { useMonsterStore } from '../../stores/monster';
 import Sortable from 'sortablejs';
 import MonsterSearch from './MonsterSearch.vue';
 import InitiativeOrder from '../initiative/InitiativeOrder.vue';
@@ -8,15 +8,9 @@ import PlayerList from '../players/PlayerList.vue';
 import MonsterForm from './MonsterForm.vue';
 import MonsterCard from './MonsterCard.vue';
 
-const store = useMonsterStore();
-const monsters = computed(() => store.monsters);
+const monsterStore = useMonsterStore();
+const monsters = computed(() => monsterStore.monsters);
 const containerRef = ref<HTMLElement | null>(null);
-const rollResult = ref<{ monsterId: string, roll: number, modifier: number, total: number } | null>(null);
-const collapsedMonsters = ref<Set<string>>(new Set());
-const showStatsForMonster = ref<Record<string, boolean>>({});
-const editingMonster = ref<string | null>(null);
-const tempMonsterData = ref<Partial<Monster>>({});
-const isAddingMonster = ref(false);
 const showMonsterSearch = ref(false);
 
 onMounted(() => {
@@ -36,124 +30,16 @@ function setupSortable() {
         newOrder.splice(evt.newIndex!, 0, movedItem);
         
         // Update the store
-        store.reorderMonsters(newOrder);
+        monsterStore.reorderMonsters(newOrder);
       }
     });
   }
 }
 
-function toggleCollapse(monsterId: string) {
-  if (collapsedMonsters.value.has(monsterId)) {
-    collapsedMonsters.value.delete(monsterId);
-  } else {
-    collapsedMonsters.value.add(monsterId);
-  }
-}
-
-function isCollapsed(monsterId: string): boolean {
-  return collapsedMonsters.value.has(monsterId);
-}
-
-function updateHp(monster: Monster, change: number) {
-  const newHp = Math.max(0, Math.min(monster.maxHp, monster.hp + change));
-  store.updateMonster(monster.id, { hp: newHp });
-}
-
-function removeMonster(id: string) {
-  if (confirm('Êtes-vous sûr de vouloir supprimer ce monstre ?')) {
-    store.removeMonster(id);
-    
-    // If we were editing this monster, reset the form
-    if (editingMonster.value === id) {
-      resetForm();
-    }
-  }
-}
-
-function rollInitiative(monster: Monster) {
-  const result = store.rollInitiative(monster.id);
-  if (result) {
-    rollResult.value = {
-      monsterId: monster.id,
-      roll: result.roll,
-      modifier: result.modifier,
-      total: result.total
-    };
-    
-    // Clear the roll result after 3 seconds
-    setTimeout(() => {
-      rollResult.value = null;
-    }, 3000);
-  }
-}
-
 function rollAllInitiatives() {
   monsters.value.forEach(monster => {
-    store.rollInitiative(monster.id);
+    monsterStore.rollInitiative(monster.id);
   });
-}
-
-function toggleStats(monsterId: string) {
-  // Ensure the object exists
-  if (!showStatsForMonster.value) {
-    showStatsForMonster.value = {};
-  }
-  
-  // Toggle the stats visibility for this monster
-  showStatsForMonster.value[monsterId] = !showStatsForMonster.value[monsterId];
-}
-
-function isStatsShown(monsterId: string): boolean {
-  return !!showStatsForMonster.value[monsterId];
-}
-
-function editMonster(monster: Monster) {
-  editingMonster.value = monster.id;
-}
-
-function saveEditedMonster(monster: Monster, updatedData: Partial<Monster>) {
-  store.updateMonster(monster.id, updatedData);
-  editingMonster.value = null;
-}
-
-function cancelEditingMonster(id: string) {
-  editingMonster.value = null;
-  // L'ID est utilisé pour la journalisation ou une utilisation future
-  console.log(`Édition annulée pour le monstre ${id}`);
-}
-
-function resetForm() {
-  editingMonster.value = null;
-  isAddingMonster.value = false;
-  tempMonsterData.value = {
-    name: '',
-    initiative: 0,
-    hp: 0,
-    maxHp: 0,
-    ac: 0,
-    notes: '',
-    strength: 10,
-    dexterity: 10,
-    constitution: 10,
-    intelligence: 10,
-    wisdom: 10,
-    charisma: 10
-  };
-}
-
-// Handle form events
-function handleFormAdd() {
-  const monsterData = tempMonsterData.value;
-  
-  if (monsterData.name && monsterData.hp !== undefined && monsterData.maxHp !== undefined) {
-    store.addMonster(monsterData as Omit<Monster, 'id'>);
-    resetForm();
-  }
-}
-
-function handleFormSave(id: string) {
-  store.updateMonster(id, tempMonsterData.value);
-  resetForm();
 }
 </script>
 
@@ -178,10 +64,10 @@ function handleFormSave(id: string) {
         <h2 class="text-2xl font-bold">Monstres</h2>
         <div class="flex space-x-2">
           <button 
-            @click="isAddingMonster = !isAddingMonster" 
+            @click="monsterStore.toggleAddingMonster()" 
             class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
           >
-            {{ isAddingMonster ? 'Annuler' : 'Ajouter un Monstre' }}
+            {{ monsterStore.isAddingMonster ? 'Annuler' : 'Ajouter un Monstre' }}
           </button>
           <button 
             @click="showMonsterSearch = !showMonsterSearch" 
@@ -203,13 +89,7 @@ function handleFormSave(id: string) {
       
       <!-- Monster Form -->
       <MonsterForm 
-        v-if="isAddingMonster" 
-        v-model:monsterData="tempMonsterData"
-        :editingMonster="editingMonster"
-        :initialData="tempMonsterData"
-        @add="handleFormAdd"
-        @save="handleFormSave"
-        @cancel="() => cancelEditingMonster(editingMonster || '')"
+        v-if="monsterStore.isAddingMonster" 
       />
       
       <!-- Monster List with Drag and Drop -->
@@ -225,19 +105,7 @@ function handleFormSave(id: string) {
         <MonsterCard
           v-for="monster in monsters"
           :key="monster.id"
-          :monster="monster"
-          :isCollapsed="isCollapsed(monster.id)"
-          :isEditing="editingMonster === monster.id"
-          :rollResult="rollResult"
-          :showStats="isStatsShown(monster.id)"
-          @toggleCollapse="toggleCollapse"
-          @toggleStats="toggleStats"
-          @updateHp="updateHp"
-          @edit="editMonster"
-          @saveEdit="saveEditedMonster"
-          @cancelEdit="cancelEditingMonster"
-          @remove="removeMonster"
-          @rollInitiative="rollInitiative"
+          :monsterId="monster.id"
         />
       </div>
     </div>

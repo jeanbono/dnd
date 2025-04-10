@@ -1,43 +1,33 @@
 <script setup lang="ts">
-import { defineProps, defineEmits, computed, ref } from 'vue';
-import { type Player } from '../../stores/player';
+import { defineProps, computed } from 'vue';
+import { type Player, usePlayerStore } from '../../stores/player';
 
 const props = defineProps<{
   player: Player;
 }>();
 
-const emit = defineEmits<{
-  save: [id: string, data: Partial<Player>];
-  remove: [id: string];
-}>();
+const playerStore = usePlayerStore();
 
-// Local state for editing
-const isEditing = ref(false);
-const editedPlayer = ref<Partial<Player>>({});
-
-// Calculate ability modifier from score
-function getAbilityModifier(score: number): number {
-  return Math.floor((score - 10) / 2);
-}
+// Computed properties
+const isEditing = computed(() => playerStore.editingPlayerId === props.player.id);
+const editedPlayer = computed(() => playerStore.tempPlayerData);
 
 const dexModifier = computed(() => {
   const dex = isEditing.value ? editedPlayer.value.dexterity || props.player.dexterity : props.player.dexterity;
-  const mod = getAbilityModifier(dex);
-  return mod >= 0 ? `+${mod}` : mod;
+  return playerStore.getAbilityModifierDisplay(dex);
 });
 
+// Actions
 function startEditing() {
-  editedPlayer.value = { ...props.player };
-  isEditing.value = true;
+  playerStore.startEditingPlayer(props.player.id);
 }
 
 function cancelEditing() {
-  isEditing.value = false;
+  playerStore.cancelEditing();
 }
 
 function saveChanges() {
-  emit('save', props.player.id, editedPlayer.value);
-  isEditing.value = false;
+  playerStore.saveEditedPlayer();
 }
 </script>
 
@@ -52,9 +42,9 @@ function saveChanges() {
           </svg>
         </div>
         <div>
-          <h3 class="font-bold text-lg">{{ player.name }}</h3>
+          <h3 class="font-bold text-lg">{{ props.player.name }}</h3>
           <div class="text-sm text-gray-500">
-            Initiative: {{ player.initiative }} | DEX: {{ player.dexterity }} ({{ dexModifier }})
+            Initiative: {{ props.player.initiative }} | DEX: {{ props.player.dexterity }} ({{ dexModifier }})
           </div>
         </div>
       </div>
@@ -67,7 +57,7 @@ function saveChanges() {
           Modifier
         </button>
         <button 
-          @click="emit('remove', player.id)" 
+          @click="playerStore.removePlayer(props.player.id)" 
           class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-sm"
         >
           Supprimer

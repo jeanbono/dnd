@@ -1,34 +1,32 @@
 <script setup lang="ts">
-import { ref, defineEmits, defineProps } from 'vue';
-import { type Player } from '../../stores/player';
+import { computed } from 'vue';
+import { usePlayerStore } from '../../stores/player';
 
-const props = defineProps<{
-  editingPlayer: string | null;
-  initialData?: Partial<Player>;
-}>();
+const playerStore = usePlayerStore();
 
-const emit = defineEmits<{
-  add: [];
-  cancel: [];
-}>();
-
-const playerData = ref<Partial<Player>>({
-  name: '',
-  initiative: 0,
-  dexterity: 10,
-  ...props.initialData
+// Utiliser directement les données du store
+const playerData = computed({
+  get: () => playerStore.tempPlayerData,
+  set: (value) => Object.assign(playerStore.tempPlayerData, value)
 });
 
 function handleSubmit() {
-  emit('add');
+  if (playerData.value.name) {
+    // S'assurer que tous les champs requis sont présents avec des valeurs par défaut si nécessaire
+    const completePlayerData = {
+      name: playerData.value.name,
+      initiative: playerData.value.initiative ?? 0,
+      dexterity: playerData.value.dexterity ?? 10,
+      notes: playerData.value.notes ?? ''
+    };
+    
+    playerStore.addPlayer(completePlayerData);
+  }
 }
 
 function handleCancel() {
-  emit('cancel');
+  playerStore.resetForm();
 }
-
-// Expose playerData to parent component
-defineExpose({ playerData });
 </script>
 
 <template>
