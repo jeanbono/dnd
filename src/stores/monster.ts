@@ -72,18 +72,26 @@ export const useMonsterStore = defineStore('monsters', () => {
   }, { deep: true });
 
   function addMonster(monsterData: Omit<Monster, 'id'>) {
-    const id = uuidv4();
+    // Create default monster data with ability scores set to 10
+    const defaultData: Partial<Monster> = {
+      name: monsterData.name || '',
+      initiative: monsterData.initiative || 0,
+      hp: monsterData.hp || 0,
+      maxHp: monsterData.maxHp || 0,
+      ac: monsterData.ac || 0,
+      notes: monsterData.notes || '',
+      strength: monsterData.strength !== undefined ? monsterData.strength : 10,
+      dexterity: monsterData.dexterity !== undefined ? monsterData.dexterity : 10,
+      constitution: monsterData.constitution !== undefined ? monsterData.constitution : 10,
+      intelligence: monsterData.intelligence !== undefined ? monsterData.intelligence : 10,
+      wisdom: monsterData.wisdom !== undefined ? monsterData.wisdom : 10,
+      charisma: monsterData.charisma !== undefined ? monsterData.charisma : 10,
+      apiId: monsterData.apiId
+    };
+    
     const monster: Monster = {
-      id,
-      // Default values for ability scores
-      strength: 10,
-      dexterity: 10,
-      constitution: 10,
-      intelligence: 10,
-      wisdom: 10,
-      charisma: 10,
-      // Override with provided data
-      ...monsterData
+      id: uuidv4(),
+      ...defaultData as Omit<Monster, 'id'>
     };
     monsters.value.push(monster);
   }

@@ -23,12 +23,17 @@ export const usePlayerStore = defineStore('player', () => {
   }, { deep: true });
 
   function addPlayer(playerData: Omit<Player, 'id'>) {
+    // Create default player data
+    const defaultData: Omit<Player, 'id'> = {
+      name: playerData.name || '',
+      initiative: playerData.initiative || 0,
+      dexterity: playerData.dexterity !== undefined ? playerData.dexterity : 10,
+      notes: playerData.notes || ''
+    };
+    
     const player: Player = {
       id: uuidv4(),
-      // Default values
-      dexterity: 10,
-      // Override with provided data
-      ...playerData
+      ...defaultData
     };
     players.value.push(player);
   }
