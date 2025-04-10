@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import MonsterList from './components/MonsterList.vue'
+import MonsterList from './components/monsters/MonsterList.vue'
 </script>
 
 <template>
