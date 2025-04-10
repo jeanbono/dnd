@@ -67,6 +67,15 @@ function saveChanges() {
     
     <!-- Edit Mode -->
     <div v-else class="flex flex-col">
+      <div class="flex items-center mb-3">
+        <div class="drag-handle cursor-move p-1 mr-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </div>
+        <h3 class="font-bold text-lg">Édition du joueur</h3>
+      </div>
+      
       <div class="grid grid-cols-3 gap-2 mb-3">
         <div>
           <label class="block text-sm font-medium mb-1">Nom</label>
