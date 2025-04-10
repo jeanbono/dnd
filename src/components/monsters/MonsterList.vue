@@ -54,24 +54,6 @@ function isCollapsed(monsterId: string): boolean {
   return collapsedMonsters.value.has(monsterId);
 }
 
-function addMonster() {
-  if (!isAddingMonster.value) {
-    isAddingMonster.value = true;
-    return;
-  }
-  
-  // Get the form component reference and access its data
-  const monsterFormRef = document.querySelector('monster-form');
-  if (!monsterFormRef) return;
-  
-  const monsterData = tempMonsterData.value;
-  
-  if (monsterData.name && monsterData.hp !== undefined && monsterData.maxHp !== undefined) {
-    store.addMonster(monsterData as Omit<Monster, 'id'>);
-    resetForm();
-  }
-}
-
 function updateHp(monster: Monster, change: number) {
   const newHp = Math.max(0, Math.min(monster.maxHp, monster.hp + change));
   store.updateMonster(monster.id, { hp: newHp });
@@ -136,11 +118,13 @@ function saveEditedMonster(monster: Monster, updatedData: Partial<Monster>) {
 
 function cancelEditingMonster(id: string) {
   editingMonster.value = null;
+  // L'ID est utilisé pour la journalisation ou une utilisation future
+  console.log(`Édition annulée pour le monstre ${id}`);
 }
 
 function resetForm() {
-  isAddingMonster.value = false;
   editingMonster.value = null;
+  isAddingMonster.value = false;
   tempMonsterData.value = {
     name: '',
     initiative: 0,
@@ -156,14 +140,6 @@ function resetForm() {
     charisma: 10
   };
 }
-
-// Computed property for form state
-const formState = computed(() => {
-  return {
-    editingMonster: editingMonster.value,
-    initialData: tempMonsterData.value
-  };
-});
 
 // Handle form events
 function handleFormAdd() {
@@ -233,7 +209,7 @@ function handleFormSave(id: string) {
         :initialData="tempMonsterData"
         @add="handleFormAdd"
         @save="handleFormSave"
-        @cancel="cancelEditingMonster"
+        @cancel="() => cancelEditingMonster(editingMonster || '')"
       />
       
       <!-- Monster List with Drag and Drop -->

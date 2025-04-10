@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { defineProps } from 'vue';
 import { type Monster } from '../../stores/monster';
 
-const props = defineProps<{
+defineProps<{
   monster: Monster;
   getAbilityScoreDisplay: (score?: number) => string;
 }>();

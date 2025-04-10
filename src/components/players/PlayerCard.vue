@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { defineProps, defineEmits, computed } from 'vue';
-import { type Player, usePlayerStore } from '../../stores/player';
+import { type Player } from '../../stores/player';
 
 const props = defineProps<{
   player: Player;
@@ -10,8 +10,6 @@ const emit = defineEmits<{
   edit: [player: Player];
   remove: [id: string];
 }>();
-
-const store = usePlayerStore();
 
 // Calculate ability modifier from score
 function getAbilityModifier(score: number): number {

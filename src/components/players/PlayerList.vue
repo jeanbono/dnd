@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import { type Player, usePlayerStore } from '../../stores/player';
 import Sortable from 'sortablejs';
 import PlayerForm from './PlayerForm.vue';
@@ -34,20 +34,6 @@ function setupSortable() {
   }
 }
 
-function addPlayer() {
-  if (!isAddingPlayer.value) {
-    isAddingPlayer.value = true;
-    return;
-  }
-  
-  const playerData = tempPlayerData.value;
-  
-  if (playerData.name && playerData.initiative !== undefined && playerData.dexterity !== undefined) {
-    store.addPlayer(playerData as Omit<Player, 'id'>);
-    resetForm();
-  }
-}
-
 function removePlayer(id: string) {
   if (confirm('Êtes-vous sûr de vouloir supprimer ce joueur ?')) {
     store.removePlayer(id);
@@ -65,11 +51,6 @@ function editPlayer(player: Player) {
   isAddingPlayer.value = true;
 }
 
-function saveEditedPlayer(id: string) {
-  store.updatePlayer(id, tempPlayerData.value);
-  resetForm();
-}
-
 function cancelEditingPlayer() {
   resetForm();
 }
@@ -80,11 +61,11 @@ function resetForm() {
   tempPlayerData.value = {
     name: '',
     initiative: 0,
-    dexterity: 10
+    dexterity: 10,
+    notes: ''
   };
 }
 
-// Handle form events
 function handleFormAdd() {
   const playerData = tempPlayerData.value;
   

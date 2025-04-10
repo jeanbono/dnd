@@ -7,6 +7,7 @@ export interface Player {
   name: string;
   initiative: number;
   dexterity: number;
+  notes?: string;
 }
 
 export const usePlayerStore = defineStore('player', () => {

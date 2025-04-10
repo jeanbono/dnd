@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { defineProps, defineEmits, computed, ref } from 'vue';
-import { type Monster, useMonsterStore } from '../../stores/monster';
+import { type Monster } from '../../stores/monster';
 import MonsterStats from './MonsterStats.vue';
 
 const props = defineProps<{
@@ -22,7 +22,6 @@ const emit = defineEmits<{
   cancelEdit: [id: string];
 }>();
 
-const store = useMonsterStore();
 const editedMonster = ref<Partial<Monster>>({...props.monster});
 
 const hpPercentage = computed(() => {
