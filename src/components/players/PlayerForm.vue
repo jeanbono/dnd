@@ -13,13 +13,12 @@ const emit = defineEmits<{
   cancel: [];
 }>();
 
-const playerData = ref<Partial<Player>>(
-  props.initialData || {
-    name: '',
-    initiative: 0,
-    dexterity: 10
-  }
-);
+const playerData = ref<Partial<Player>>({
+  name: '',
+  initiative: 0,
+  dexterity: 10,
+  ...props.initialData
+});
 
 const isEditing = computed(() => !!props.editingPlayer);
 

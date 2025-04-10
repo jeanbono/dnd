@@ -13,22 +13,21 @@ const emit = defineEmits<{
   cancel: [];
 }>();
 
-const monsterData = ref<Partial<Monster>>(
-  props.initialData || {
-    name: '',
-    initiative: 0,
-    hp: 0,
-    maxHp: 0,
-    ac: 0,
-    notes: '',
-    strength: 10,
-    dexterity: 10,
-    constitution: 10,
-    intelligence: 10,
-    wisdom: 10,
-    charisma: 10
-  }
-);
+const monsterData = ref<Partial<Monster>>({
+  name: '',
+  initiative: 0,
+  hp: 0,
+  maxHp: 0,
+  ac: 0,
+  notes: '',
+  strength: 10,
+  dexterity: 10,
+  constitution: 10,
+  intelligence: 10,
+  wisdom: 10,
+  charisma: 10,
+  ...props.initialData
+});
 
 const isEditing = computed(() => !!props.editingMonster);
 

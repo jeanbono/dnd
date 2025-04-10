@@ -75,6 +75,14 @@ export const useMonsterStore = defineStore('monsters', () => {
     const id = uuidv4();
     const monster: Monster = {
       id,
+      // Default values for ability scores
+      strength: 10,
+      dexterity: 10,
+      constitution: 10,
+      intelligence: 10,
+      wisdom: 10,
+      charisma: 10,
+      // Override with provided data
       ...monsterData
     };
     monsters.value.push(monster);

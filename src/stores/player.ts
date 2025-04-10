@@ -25,6 +25,9 @@ export const usePlayerStore = defineStore('player', () => {
   function addPlayer(playerData: Omit<Player, 'id'>) {
     const player: Player = {
       id: uuidv4(),
+      // Default values
+      dexterity: 10,
+      // Override with provided data
       ...playerData
     };
     players.value.push(player);
