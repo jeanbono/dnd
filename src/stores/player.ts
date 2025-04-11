@@ -1,17 +1,18 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
-import { Condition, getExhaustionLevel, decrementConditionDuration } from '@/utils/conditionUtils';
-import type { ConditionWithLevel } from '@/utils/conditionUtils';
+import { Condition } from '@/utils/conditionUtils';
+import type { ConditionData } from '@/utils/conditionUtils';
 
 export interface Player {
   id: string;
   name: string;
   initiative: number;
-  dexterity: number;
-  notes?: string;
-  // Conditions/États
-  conditions: ConditionWithLevel[];
+  hp?: number;
+  maxHp?: number;
+  ac: number;
+  notes: string;
+  conditions: { condition: ConditionData; level?: number; duration?: number }[];
 }
 
 export const usePlayerStore = defineStore('player', () => {
@@ -32,7 +33,9 @@ export const usePlayerStore = defineStore('player', () => {
     const defaultData: Omit<Player, 'id'> = {
       name: playerData.name || '',
       initiative: playerData.initiative || 0,
-      dexterity: playerData.dexterity !== undefined ? playerData.dexterity : 10,
+      hp: playerData.hp,
+      maxHp: playerData.maxHp,
+      ac: playerData.ac !== undefined ? playerData.ac : 10,
       notes: playerData.notes || '',
       conditions: playerData.conditions || []
     };
@@ -46,9 +49,17 @@ export const usePlayerStore = defineStore('player', () => {
   }
 
   function updatePlayer(id: string, data: Partial<Omit<Player, 'id'>>) {
-    const index = players.value.findIndex(player => player.id === id);
+    const index = players.value.findIndex(p => p.id === id);
     if (index !== -1) {
       players.value[index] = { ...players.value[index], ...data };
+    }
+    editingPlayerId.value = null;
+  }
+
+  function updatePlayerHp(id: string, change: number) {
+    const player = players.value.find(p => p.id === id);
+    if (player && player.hp !== undefined && player.maxHp !== undefined) {
+      player.hp = Math.max(0, Math.min(player.maxHp, player.hp + change));
     }
   }
 
@@ -103,12 +114,12 @@ export const usePlayerStore = defineStore('player', () => {
   }
 
   // Gestion des conditions
-  function addCondition(playerId: string, condition: Condition, duration?: number | null, level?: number) {
+  function addCondition(playerId: string, condition: ConditionData, duration?: number | null, level?: number) {
     const player = getPlayerById(playerId);
     if (!player) return;
 
     // Vérifier si la condition existe déjà
-    const existingConditionIndex = player.conditions.findIndex(c => c.condition === condition);
+    const existingConditionIndex = player.conditions.findIndex(c => c.condition.id === condition.id);
 
     if (existingConditionIndex >= 0) {
       // Si c'est l'épuisement, on incrémente le niveau
@@ -122,16 +133,16 @@ export const usePlayerStore = defineStore('player', () => {
     // Ajouter la nouvelle condition
     player.conditions.push({
       condition,
-      level: condition === Condition.EXHAUSTION ? (level || 1) : undefined,
+      level: condition === Condition.EXHAUSTION ? level || 1 : undefined,
       duration: condition !== Condition.EXHAUSTION && duration && duration > 0 ? duration : undefined
     });
   }
 
-  function removeCondition(playerId: string, condition: Condition) {
+  function removeCondition(playerId: string, condition: ConditionData) {
     const player = getPlayerById(playerId);
     if (!player) return;
 
-    player.conditions = player.conditions.filter(c => c.condition !== condition);
+    player.conditions = player.conditions.filter(c => c.condition.id !== condition.id);
   }
 
   function updateExhaustionLevel(playerId: string, level: number) {
@@ -139,42 +150,40 @@ export const usePlayerStore = defineStore('player', () => {
     if (!player) return;
 
     // Vérifier si le joueur a déjà l'épuisement
-    const exhaustionIndex = player.conditions.findIndex(c => c.condition === Condition.EXHAUSTION);
+    const exhaustionIndex = player.conditions.findIndex(c => c.condition.id === Condition.EXHAUSTION.id);
 
     if (level <= 0) {
       // Supprimer l'épuisement si le niveau est 0 ou négatif
       if (exhaustionIndex >= 0) {
         player.conditions.splice(exhaustionIndex, 1);
       }
-    } else if (level > 6) {
-      // Limiter à 6 maximum (mort)
-      if (exhaustionIndex >= 0) {
-        player.conditions[exhaustionIndex].level = 6;
-      } else {
-        player.conditions.push({ condition: Condition.EXHAUSTION, level: 6 });
-      }
     } else {
-      // Mettre à jour ou ajouter l'épuisement
       if (exhaustionIndex >= 0) {
+        // Mettre à jour le niveau d'épuisement existant
         player.conditions[exhaustionIndex].level = level;
       } else {
-        player.conditions.push({ condition: Condition.EXHAUSTION, level });
+        // Ajouter une nouvelle condition d'épuisement
+        player.conditions.push({
+          condition: Condition.EXHAUSTION,
+          level: level
+        });
       }
     }
   }
 
-  function hasCondition(playerId: string, condition: Condition): boolean {
+  function hasCondition(playerId: string, condition: ConditionData): boolean {
     const player = getPlayerById(playerId);
     if (!player) return false;
 
-    return player.conditions.some(c => c.condition === condition);
+    return player.conditions.some(c => c.condition.id === condition.id);
   }
 
   function getExhaustionLevelForPlayer(playerId: string): number {
     const player = getPlayerById(playerId);
     if (!player) return 0;
 
-    return getExhaustionLevel(player.conditions);
+    const exhaustionCondition = player.conditions.find(c => c.condition.id === Condition.EXHAUSTION.id);
+    return exhaustionCondition?.level || 0;
   }
 
   function clearAllConditions(playerId: string) {
@@ -187,12 +196,15 @@ export const usePlayerStore = defineStore('player', () => {
   function decrementConditionDurations() {
     players.value.forEach(player => {
       // Créer un tableau des conditions à supprimer
-      const conditionsToRemove: Condition[] = [];
+      const conditionsToRemove: ConditionData[] = [];
 
       // Vérifier chaque condition
       player.conditions.forEach(condition => {
-        if (decrementConditionDuration(condition)) {
-          conditionsToRemove.push(condition.condition);
+        if (condition.duration && condition.duration > 0) {
+          condition.duration--;
+          if (condition.duration <= 0) {
+            conditionsToRemove.push(condition.condition);
+          }
         }
       });
 
@@ -222,6 +234,7 @@ export const usePlayerStore = defineStore('player', () => {
     // Functions
     addPlayer,
     updatePlayer,
+    updatePlayerHp,
     updatePlayerInitiative,
     removePlayer,
     reorderPlayers,

@@ -13,8 +13,6 @@ import InitiativeOrder from './components/initiative/InitiativeOrder.vue'
     </header>
     
     <main class="max-w-4xl mx-auto py-6 px-4">
-      <h1 class="text-3xl font-bold mb-6 text-center">Suivi de Combat D&D</h1>
-      
       <!-- Initiative Order Component -->
       <section class="bg-white p-6 rounded-lg shadow-md mb-8">
         <InitiativeOrder />

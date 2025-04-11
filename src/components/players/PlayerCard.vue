@@ -17,6 +17,9 @@ const isEditing = computed(() => playerStore.editingPlayerId === props.playerId)
 const editedPlayer = ref({
   name: '',
   initiative: 0,
+  hp: undefined as number | undefined,
+  maxHp: undefined as number | undefined,
+  ac: 10,
   dexterity: 10,
   notes: ''
 });
@@ -27,7 +30,10 @@ watch(() => player.value, (newPlayer) => {
     editedPlayer.value = {
       name: newPlayer.name,
       initiative: newPlayer.initiative,
-      dexterity: newPlayer.dexterity,
+      hp: newPlayer.hp,
+      maxHp: newPlayer.maxHp,
+      ac: newPlayer.ac,
+      dexterity: 10, // Valeur par défaut car dexterity n'existe plus dans Player
       notes: newPlayer.notes || ''
     };
   }
@@ -39,16 +45,34 @@ watch(isEditing, (editing) => {
     editedPlayer.value = {
       name: player.value.name,
       initiative: player.value.initiative,
-      dexterity: player.value.dexterity,
+      hp: player.value.hp,
+      maxHp: player.value.maxHp,
+      ac: player.value.ac,
+      dexterity: 10, // Valeur par défaut car dexterity n'existe plus dans Player
       notes: player.value.notes || ''
     };
   }
-});
+}, { immediate: true });
 
+// Calculer le modificateur de dextérité
 const dexModifier = computed(() => {
   if (!player.value) return '';
-  const dex = isEditing.value ? editedPlayer.value.dexterity : player.value.dexterity;
+  const dex = player.value.initiative; // Utiliser l'initiative comme approximation de la dextérité
   return playerStore.getAbilityModifierDisplay(dex);
+});
+
+const hpColor = computed(() => {
+  if (!player.value || player.value.hp === undefined || player.value.maxHp === undefined || player.value.maxHp === 0) return '';
+  const hpPercentage = (player.value.hp / player.value.maxHp) * 100;
+  if (hpPercentage > 75) return 'bg-green-500';
+  if (hpPercentage > 50) return 'bg-yellow-500';
+  if (hpPercentage > 25) return 'bg-orange-500';
+  return 'bg-red-500';
+});
+
+const hpPercentage = computed(() => {
+  if (!player.value || player.value.hp === undefined || player.value.maxHp === undefined || player.value.maxHp === 0) return 0;
+  return (player.value.hp / player.value.maxHp) * 100;
 });
 
 // Actions
@@ -82,7 +106,7 @@ function saveChanges() {
           <div>
             <h3 class="font-bold text-lg">{{ player.name }}</h3>
             <div class="text-sm text-gray-500">
-              Initiative: {{ player.initiative }} | DEX: {{ player.dexterity }} ({{ dexModifier }})
+              Initiative: {{ player.initiative }} | DEX: {{ dexModifier }}
             </div>
           </div>
         </div>
@@ -100,6 +124,46 @@ function saveChanges() {
           >
             Supprimer
           </button>
+        </div>
+      </div>
+      
+      <!-- Barre de points de vie -->
+      <div v-if="player && player.hp !== undefined && player.maxHp !== undefined && player.maxHp > 0" class="mt-2 px-4 pb-2">
+        <div class="flex justify-between text-sm mb-1">
+          <span>PV: {{ player.hp }} / {{ player.maxHp }}</span>
+          
+          <div class="flex space-x-1">
+            <button 
+              @click="playerStore.updatePlayerHp(playerId, -1)" 
+              class="bg-red-100 hover:bg-red-200 text-red-700 px-2 rounded"
+            >
+              -1
+            </button>
+            <button 
+              @click="playerStore.updatePlayerHp(playerId, -5)" 
+              class="bg-red-100 hover:bg-red-200 text-red-700 px-2 rounded"
+            >
+              -5
+            </button>
+            <button 
+              @click="playerStore.updatePlayerHp(playerId, 1)" 
+              class="bg-green-100 hover:bg-green-200 text-green-700 px-2 rounded"
+            >
+              +1
+            </button>
+            <button 
+              @click="playerStore.updatePlayerHp(playerId, 5)" 
+              class="bg-green-100 hover:bg-green-200 text-green-700 px-2 rounded"
+            >
+              +5
+            </button>
+          </div>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-2">
+          <div 
+            :class="[hpColor, 'h-2 rounded-full transition-all duration-300']" 
+            :style="{ width: `${hpPercentage}%` }"
+          ></div>
         </div>
       </div>
       
@@ -150,6 +214,33 @@ function saveChanges() {
           <label class="block text-sm font-medium mb-1">Dextérité</label>
           <input 
             v-model.number="editedPlayer.dexterity" 
+            type="number" 
+            class="w-full p-2 border border-gray-300 rounded-md"
+          >
+        </div>
+      </div>
+      
+      <div class="grid grid-cols-3 gap-2 mb-3">
+        <div>
+          <label class="block text-sm font-medium mb-1">Points de Vie <span class="text-gray-400 text-xs">(optionnel)</span></label>
+          <input 
+            v-model.number="editedPlayer.hp" 
+            type="number" 
+            class="w-full p-2 border border-gray-300 rounded-md"
+          >
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">PV Maximum <span class="text-gray-400 text-xs">(optionnel)</span></label>
+          <input 
+            v-model.number="editedPlayer.maxHp" 
+            type="number" 
+            class="w-full p-2 border border-gray-300 rounded-md"
+          >
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Classe d'armure</label>
+          <input 
+            v-model.number="editedPlayer.ac" 
             type="number" 
             class="w-full p-2 border border-gray-300 rounded-md"
           >

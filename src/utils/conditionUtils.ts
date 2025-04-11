@@ -3,31 +3,39 @@
  */
 
 /**
- * Énumération des différentes conditions possibles
+ * Interface pour une condition avec ses propriétés
  */
-export enum Condition {
-  BLINDED = 'blinded',        // Aveuglé
-  CHARMED = 'charmed',        // Charmé
-  DEAFENED = 'deafened',      // Assourdi
-  EXHAUSTION = 'exhaustion',  // Épuisement (avec niveaux)
-  FRIGHTENED = 'frightened',  // Effrayé
-  GRAPPLED = 'grappled',      // Agrippé
-  INCAPACITATED = 'incapacitated', // Incapable d'agir
-  INVISIBLE = 'invisible',    // Invisible
-  PARALYZED = 'paralyzed',    // Paralysé
-  PETRIFIED = 'petrified',    // Pétrifié
-  POISONED = 'poisoned',      // Empoisonné
-  PRONE = 'prone',            // À terre
-  RESTRAINED = 'restrained',  // Entravé
-  STUNNED = 'stunned',        // Étourdi
-  UNCONSCIOUS = 'unconscious' // Inconscient
+export interface ConditionData {
+  id: string;
+  label: string;
 }
+
+/**
+ * Énumération des différentes conditions possibles avec leurs libellés
+ */
+export const Condition: Record<string, ConditionData> = {
+  BLINDED: { id: 'blinded', label: 'Aveuglé' },
+  CHARMED: { id: 'charmed', label: 'Charmé' },
+  DEAFENED: { id: 'deafened', label: 'Assourdi' },
+  EXHAUSTION: { id: 'exhaustion', label: 'Épuisement' },
+  FRIGHTENED: { id: 'frightened', label: 'Effrayé' },
+  GRAPPLED: { id: 'grappled', label: 'Agrippé' },
+  INCAPACITATED: { id: 'incapacitated', label: 'Incapable d\'agir' },
+  INVISIBLE: { id: 'invisible', label: 'Invisible' },
+  PARALYZED: { id: 'paralyzed', label: 'Paralysé' },
+  PETRIFIED: { id: 'petrified', label: 'Pétrifié' },
+  POISONED: { id: 'poisoned', label: 'Empoisonné' },
+  PRONE: { id: 'prone', label: 'À terre' },
+  RESTRAINED: { id: 'restrained', label: 'Entravé' },
+  STUNNED: { id: 'stunned', label: 'Étourdi' },
+  UNCONSCIOUS: { id: 'unconscious', label: 'Inconscient' }
+};
 
 /**
  * Interface pour une condition avec niveau (comme l'épuisement)
  */
 export interface ConditionWithLevel {
-  condition: Condition;
+  condition: ConditionData;
   level?: number; // Utilisé principalement pour l'épuisement
   duration?: number; // Durée en nombre de tours (optionnel)
 }
@@ -35,43 +43,43 @@ export interface ConditionWithLevel {
 /**
  * Traductions françaises des noms de conditions
  */
-export const conditionTranslations: Record<Condition, string> = {
-  [Condition.BLINDED]: 'Aveuglé',
-  [Condition.CHARMED]: 'Charmé',
-  [Condition.DEAFENED]: 'Assourdi',
-  [Condition.EXHAUSTION]: 'Épuisement',
-  [Condition.FRIGHTENED]: 'Effrayé',
-  [Condition.GRAPPLED]: 'Agrippé',
-  [Condition.INCAPACITATED]: 'Incapable d\'agir',
-  [Condition.INVISIBLE]: 'Invisible',
-  [Condition.PARALYZED]: 'Paralysé',
-  [Condition.PETRIFIED]: 'Pétrifié',
-  [Condition.POISONED]: 'Empoisonné',
-  [Condition.PRONE]: 'À terre',
-  [Condition.RESTRAINED]: 'Entravé',
-  [Condition.STUNNED]: 'Étourdi',
-  [Condition.UNCONSCIOUS]: 'Inconscient'
+export const conditionTranslations: Record<string, string> = {
+  [Condition.BLINDED.id]: Condition.BLINDED.label,
+  [Condition.CHARMED.id]: Condition.CHARMED.label,
+  [Condition.DEAFENED.id]: Condition.DEAFENED.label,
+  [Condition.EXHAUSTION.id]: Condition.EXHAUSTION.label,
+  [Condition.FRIGHTENED.id]: Condition.FRIGHTENED.label,
+  [Condition.GRAPPLED.id]: Condition.GRAPPLED.label,
+  [Condition.INCAPACITATED.id]: Condition.INCAPACITATED.label,
+  [Condition.INVISIBLE.id]: Condition.INVISIBLE.label,
+  [Condition.PARALYZED.id]: Condition.PARALYZED.label,
+  [Condition.PETRIFIED.id]: Condition.PETRIFIED.label,
+  [Condition.POISONED.id]: Condition.POISONED.label,
+  [Condition.PRONE.id]: Condition.PRONE.label,
+  [Condition.RESTRAINED.id]: Condition.RESTRAINED.label,
+  [Condition.STUNNED.id]: Condition.STUNNED.label,
+  [Condition.UNCONSCIOUS.id]: Condition.UNCONSCIOUS.label
 };
 
 /**
  * Descriptions des conditions pour l'affichage
  */
-export const conditionDescriptions: Record<Condition, string> = {
-  [Condition.BLINDED]: `${conditionTranslations[Condition.BLINDED]} - Ne voit pas, rate les jets nécessitant la vue. Désavantage aux attaques, avantage aux attaques contre.`,
-  [Condition.CHARMED]: `${conditionTranslations[Condition.CHARMED]} - Ne peut pas attaquer le charmeur. Le charmeur a avantage aux interactions sociales.`,
-  [Condition.DEAFENED]: `${conditionTranslations[Condition.DEAFENED]} - N'entend pas, rate les jets nécessitant l'ouïe.`,
-  [Condition.EXHAUSTION]: `${conditionTranslations[Condition.EXHAUSTION]} - Effets cumulatifs selon le niveau (1-6).`,
-  [Condition.FRIGHTENED]: `${conditionTranslations[Condition.FRIGHTENED]} - Désavantage aux jets quand la source est visible. Ne peut s'approcher volontairement.`,
-  [Condition.GRAPPLED]: `${conditionTranslations[Condition.GRAPPLED]} - Vitesse réduite à 0, pas de bonus de vitesse.`,
-  [Condition.INCAPACITATED]: `${conditionTranslations[Condition.INCAPACITATED]} - Ne peut effectuer aucune action ni réaction.`,
-  [Condition.INVISIBLE]: `${conditionTranslations[Condition.INVISIBLE]} - Ne peut être vu sans magie. Avantage aux attaques, désavantage aux attaques contre.`,
-  [Condition.PARALYZED]: `${conditionTranslations[Condition.PARALYZED]} - Incapable d'agir, ne peut bouger ni parler. Rate jets Force/Dex. Coups critiques à 1,5m.`,
-  [Condition.PETRIFIED]: `${conditionTranslations[Condition.PETRIFIED]} - Transformé en substance solide. Incapable d'agir, résistance aux dégâts.`,
-  [Condition.POISONED]: `${conditionTranslations[Condition.POISONED]} - Désavantage aux jets d'attaque et de caractéristique.`,
-  [Condition.PRONE]: `${conditionTranslations[Condition.PRONE]} - Peut ramper. Désavantage aux attaques. Avantage aux attaques contre à 1,5m, sinon désavantage.`,
-  [Condition.RESTRAINED]: `${conditionTranslations[Condition.RESTRAINED]} - Vitesse à 0. Désavantage aux attaques et jets Dex. Avantage aux attaques contre.`,
-  [Condition.STUNNED]: `${conditionTranslations[Condition.STUNNED]} - Incapable d'agir, ne peut bouger, parle difficilement. Rate jets Force/Dex. Avantage aux attaques contre.`,
-  [Condition.UNCONSCIOUS]: `${conditionTranslations[Condition.UNCONSCIOUS]} - Incapable d'agir, tombe à terre. Rate jets Force/Dex. Avantage aux attaques contre, critiques à 1,5m.`
+export const conditionDescriptions: Record<string, string> = {
+  [Condition.BLINDED.id]: `${Condition.BLINDED.label} - Ne voit pas, rate les jets nécessitant la vue. Désavantage aux attaques, avantage aux attaques contre.`,
+  [Condition.CHARMED.id]: `${Condition.CHARMED.label} - Ne peut pas attaquer le charmeur. Le charmeur a avantage aux interactions sociales.`,
+  [Condition.DEAFENED.id]: `${Condition.DEAFENED.label} - N'entend pas, rate les jets nécessitant l'ouïe.`,
+  [Condition.EXHAUSTION.id]: `${Condition.EXHAUSTION.label} - Effets cumulatifs selon le niveau (1-6).`,
+  [Condition.FRIGHTENED.id]: `${Condition.FRIGHTENED.label} - Désavantage aux jets quand la source est visible. Ne peut s'approcher volontairement.`,
+  [Condition.GRAPPLED.id]: `${Condition.GRAPPLED.label} - Vitesse réduite à 0, pas de bonus de vitesse.`,
+  [Condition.INCAPACITATED.id]: `${Condition.INCAPACITATED.label} - Ne peut effectuer aucune action ni réaction.`,
+  [Condition.INVISIBLE.id]: `${Condition.INVISIBLE.label} - Ne peut être vu sans magie. Avantage aux attaques, désavantage aux attaques contre.`,
+  [Condition.PARALYZED.id]: `${Condition.PARALYZED.label} - Incapable d'agir, ne peut bouger ni parler. Rate jets Force/Dex. Coups critiques à 1,5m.`,
+  [Condition.PETRIFIED.id]: `${Condition.PETRIFIED.label} - Transformé en substance solide. Incapable d'agir, résistance aux dégâts.`,
+  [Condition.POISONED.id]: `${Condition.POISONED.label} - Désavantage aux jets d'attaque et de caractéristique.`,
+  [Condition.PRONE.id]: `${Condition.PRONE.label} - Peut ramper. Désavantage aux attaques. Avantage aux attaques contre à 1,5m, sinon désavantage.`,
+  [Condition.RESTRAINED.id]: `${Condition.RESTRAINED.label} - Vitesse à 0. Désavantage aux attaques et jets Dex. Avantage aux attaques contre.`,
+  [Condition.STUNNED.id]: `${Condition.STUNNED.label} - Incapable d'agir, ne peut bouger, parle difficilement. Rate jets Force/Dex. Avantage aux attaques contre.`,
+  [Condition.UNCONSCIOUS.id]: `${Condition.UNCONSCIOUS.label} - Incapable d'agir, tombe à terre. Rate jets Force/Dex. Avantage aux attaques contre, critiques à 1,5m.`
 };
 
 /**
@@ -90,19 +98,27 @@ export const exhaustionLevelDescriptions: Record<number, string> = {
  * Obtient la description complète d'une condition, y compris le niveau d'épuisement si applicable
  */
 export function getConditionDescription(conditionWithLevel: ConditionWithLevel): string {
-  const { condition, level } = conditionWithLevel;
+  const { condition, level, duration } = conditionWithLevel;
   
+  let description = condition.label;
+  
+  // Ajouter le niveau pour l'épuisement
   if (condition === Condition.EXHAUSTION && level !== undefined) {
-    return `${conditionTranslations[Condition.EXHAUSTION]} (Niveau ${level}) - ${exhaustionLevelDescriptions[level]}`;
+    description += ` (niveau ${level})`;
   }
   
-  return conditionDescriptions[condition];
+  // Ajouter la durée si elle est définie
+  if (duration !== undefined) {
+    description += ` (${duration} tour${duration > 1 ? 's' : ''})`;
+  }
+  
+  return description;
 }
 
 /**
  * Vérifie si une condition est active pour une créature
  */
-export function hasCondition(conditions: ConditionWithLevel[], condition: Condition): boolean {
+export function hasCondition(conditions: ConditionWithLevel[], condition: ConditionData): boolean {
   return conditions.some(c => c.condition === condition);
 }
 
@@ -122,42 +138,37 @@ export const disadvantageConditions = [
   Condition.POISONED,
   Condition.PRONE,
   Condition.RESTRAINED,
-  Condition.FRIGHTENED,
-  // L'épuisement niveau 3+ donne un désavantage
+  Condition.FRIGHTENED
 ];
 
 /**
  * Vérifie si une créature a un désavantage aux jets d'attaque en fonction de ses conditions
  */
 export function hasDisadvantage(conditions: ConditionWithLevel[]): boolean {
-  // Vérifier si la créature a une condition qui donne un désavantage
+  // Vérifier les conditions standard qui donnent un désavantage
   const hasDisadvantageCondition = conditions.some(c => 
-    disadvantageConditions.includes(c.condition)
+    disadvantageConditions.some(dc => dc.id === c.condition.id)
   );
   
-  // Vérifier si la créature a un niveau d'épuisement de 3 ou plus
-  const exhaustion = conditions.find(c => c.condition === Condition.EXHAUSTION);
-  const hasExhaustionDisadvantage = exhaustion?.level !== undefined && exhaustion.level >= 3;
+  // Vérifier l'épuisement de niveau 3 ou plus
+  const exhaustionLevel = getExhaustionLevel(conditions);
+  const hasDisadvantageFromExhaustion = exhaustionLevel >= 3;
   
-  return hasDisadvantageCondition || hasExhaustionDisadvantage;
+  return hasDisadvantageCondition || hasDisadvantageFromExhaustion;
 }
 
 /**
  * Décrémente la durée d'une condition et retourne true si la condition doit être supprimée
  */
 export function decrementConditionDuration(condition: ConditionWithLevel): boolean {
-  // L'épuisement n'a pas de durée
-  if (condition.condition === Condition.EXHAUSTION) {
+  // Si la condition n'a pas de durée ou si c'est l'épuisement, ne pas la décrémenter
+  if (condition.duration === undefined || condition.condition === Condition.EXHAUSTION) {
     return false;
   }
   
-  // Si la condition a une durée définie
-  if (condition.duration !== undefined) {
-    condition.duration -= 1;
-    // Retourne true si la durée est arrivée à 0 (condition à supprimer)
-    return condition.duration <= 0;
-  }
+  // Décrémenter la durée
+  condition.duration--;
   
-  // Si la condition n'a pas de durée définie, elle est permanente
-  return false;
+  // Retourner true si la durée est arrivée à 0 (condition à supprimer)
+  return condition.duration <= 0;
 }

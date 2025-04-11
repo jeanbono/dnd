@@ -2,8 +2,8 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
 import { calculateAbilityModifier, getAbilityScoreDisplay } from '@/utils/abilityUtils';
-import { Condition, decrementConditionDuration } from '@/utils/conditionUtils';
-import type { ConditionWithLevel } from '@/utils/conditionUtils';
+import { decrementConditionDuration } from '@/utils/conditionUtils';
+import type { ConditionData } from '@/utils/conditionUtils';
 
 export interface Monster {
   id: string;
@@ -14,7 +14,7 @@ export interface Monster {
   ac: number;
   notes: string;
   apiId?: string;
-  // D&D Stats
+  // Caractéristiques
   strength?: number;
   dexterity?: number;
   constitution?: number;
@@ -22,7 +22,7 @@ export interface Monster {
   wisdom?: number;
   charisma?: number;
   // Conditions/États
-  conditions: ConditionWithLevel[];
+  conditions: { condition: ConditionData; duration?: number }[];
 }
 
 interface MonsterSearchResult {
@@ -316,40 +316,37 @@ export const useMonsterStore = defineStore('monsters', () => {
   }
 
   // Gestion des conditions
-  function addCondition(monsterId: string, condition: Condition, duration?: number | null) {
+  function addCondition(monsterId: string, condition: ConditionData, duration?: number | null) {
     const monster = getMonsterById(monsterId);
     if (!monster) return;
     
     // Vérifier si la condition existe déjà
-    const existingConditionIndex = monster.conditions.findIndex(c => c.condition === condition);
+    const existingConditionIndex = monster.conditions.findIndex(c => c.condition.id === condition.id);
     
     if (existingConditionIndex >= 0) {
       // La condition existe déjà, on ne fait rien
       return;
     }
     
-    // Ajouter la nouvelle condition (l'épuisement est réservé aux joueurs)
-    if (condition !== Condition.EXHAUSTION) {
-      monster.conditions.push({
-        condition,
-        level: undefined,
-        duration: duration && duration > 0 ? duration : undefined
-      });
-    }
+    // Ajouter la nouvelle condition
+    monster.conditions.push({
+      condition,
+      duration: duration && duration > 0 ? duration : undefined
+    });
   }
   
-  function removeCondition(monsterId: string, condition: Condition) {
+  function removeCondition(monsterId: string, condition: ConditionData) {
     const monster = getMonsterById(monsterId);
     if (!monster) return;
     
-    monster.conditions = monster.conditions.filter(c => c.condition !== condition);
+    monster.conditions = monster.conditions.filter(c => c.condition.id !== condition.id);
   }
   
-  function hasCondition(monsterId: string, condition: Condition): boolean {
+  function hasCondition(monsterId: string, condition: ConditionData): boolean {
     const monster = getMonsterById(monsterId);
     if (!monster) return false;
     
-    return monster.conditions.some(c => c.condition === condition);
+    return monster.conditions.some(c => c.condition.id === condition.id);
   }
   
   function clearAllConditions(monsterId: string) {
@@ -362,7 +359,7 @@ export const useMonsterStore = defineStore('monsters', () => {
   function decrementConditionDurations() {
     monsters.value.forEach(monster => {
       // Créer un tableau des conditions à supprimer
-      const conditionsToRemove: Condition[] = [];
+      const conditionsToRemove: ConditionData[] = [];
       
       // Vérifier chaque condition
       monster.conditions.forEach(condition => {

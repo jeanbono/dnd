@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
-import { Condition, conditionTranslations } from '@/utils/conditionUtils';
-import type { ConditionWithLevel } from '@/utils/conditionUtils';
+import { Condition, type ConditionData, type ConditionWithLevel } from '@/utils/conditionUtils';
 import ConditionBadge from '@/components/conditions/ConditionBadge.vue';
 import { useMonsterStore } from '@/stores/monster';
 import { usePlayerStore } from '@/stores/player';
@@ -20,7 +19,7 @@ const monsterStore = useMonsterStore();
 const playerStore = usePlayerStore();
 
 // État local
-const selectedCondition = ref<Condition | null>(null);
+const selectedCondition = ref<ConditionData | null>(null);
 const exhaustionLevel = ref<number>(1);
 const conditionDuration = ref<number | null>(null);
 const showAddMenu = ref(false);
@@ -28,7 +27,7 @@ const menuRef = ref<HTMLElement | null>(null);
 
 // Obtenir le niveau actuel d'épuisement
 const currentExhaustionLevel = computed(() => {
-  const exhaustionCondition = props.conditions?.find(c => c.condition === Condition.EXHAUSTION);
+  const exhaustionCondition = props.conditions?.find(c => c.condition.id === Condition.EXHAUSTION.id);
   return exhaustionCondition?.level || 1;
 });
 
@@ -43,29 +42,29 @@ watch(currentExhaustionLevel, (newLevel) => {
 // Liste des conditions disponibles (sans l'épuisement qui est géré séparément)
 const availableConditions = computed(() => {
   // S'assurer que conditions existe avant d'y accéder
-  const existingConditions = new Set((props.conditions || []).map(c => c.condition));
+  const existingConditionIds = new Set((props.conditions || []).map(c => c.condition.id));
   
   return Object.values(Condition)
     .filter(condition => {
       // L'épuisement est uniquement pour les joueurs
-      if (condition === Condition.EXHAUSTION && props.creatureType !== 'player') {
+      if (condition.id === Condition.EXHAUSTION.id && props.creatureType !== 'player') {
         return false;
       }
-      return !existingConditions.has(condition);
+      return !existingConditionIds.has(condition.id);
     })
-    .sort();
+    .sort((a, b) => a.label.localeCompare(b.label));
 });
 
 // Vérifie si la créature a déjà une condition d'épuisement
 const hasExhaustion = computed(() => {
-  return props.conditions?.some(c => c.condition === Condition.EXHAUSTION) || false;
+  return props.conditions?.some(c => c.condition.id === Condition.EXHAUSTION.id) || false;
 });
 
 // Ajouter une condition
 function addCondition() {
   if (!selectedCondition.value) return;
   
-  if (selectedCondition.value === Condition.EXHAUSTION) {
+  if (selectedCondition.value.id === Condition.EXHAUSTION.id) {
     updateExhaustion();
   } else {
     if (props.creatureType === 'monster') {
@@ -88,17 +87,6 @@ function updateExhaustion() {
   showAddMenu.value = false;
 }
 
-// Supprimer une condition
-function removeCondition(condition: Condition) {
-  if (props.creatureType === 'monster') {
-    monsterStore.removeCondition(props.creatureId, condition);
-  } else {
-    playerStore.removeCondition(props.creatureId, condition);
-  }
-  // Fermer le menu après avoir supprimé une condition
-  showAddMenu.value = false;
-}
-
 // Effacer toutes les conditions
 function clearAllConditions() {
   if (props.creatureType === 'monster') {
@@ -106,6 +94,12 @@ function clearAllConditions() {
   } else {
     playerStore.clearAllConditions(props.creatureId);
   }
+  showAddMenu.value = false;
+}
+
+// Supprimer l'épuisement
+function removeExhaustion() {
+  playerStore.removeCondition(props.creatureId, Condition.EXHAUSTION);
   showAddMenu.value = false;
 }
 
@@ -135,129 +129,126 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside);
 });
-
 </script>
 
 <template>
-  <div class="condition-manager">
+  <div class="condition-manager relative">
     <!-- Affichage des conditions actuelles et bouton d'ajout -->
     <div class="flex flex-wrap items-center">
       <template v-if="props.conditions && props.conditions.length > 0">
         <ConditionBadge 
           v-for="conditionItem in props.conditions" 
-          :key="conditionItem.condition"
+          :key="conditionItem.condition.id"
           :condition="conditionItem.condition"
           :level="conditionItem.level"
           :duration="conditionItem.duration"
           :creatureId="props.creatureId"
           :creatureType="props.creatureType"
-          class="mr-2 mb-1"
         />
       </template>
       
-      <!-- Bouton pour ajouter des conditions avec menu déroulant -->
-      <div class="relative inline-block mb-1">
+      <div class="relative inline-block">
         <button 
           @click.stop="toggleAddMenu"
-          class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-blue-500 bg-blue-50 border border-blue-200 mr-2 hover:bg-blue-100"
+          class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-blue-500 bg-blue-50 border border-blue-200 mr-2 mb-1 hover:bg-blue-100"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor">
-            <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
           </svg>
-          <span v-if="!props.conditions || props.conditions.length === 0">Ajouter un état</span>
-          <span v-else>État</span>
+          Ajouter un état
         </button>
         
-        <!-- Menu déroulant pour ajouter des conditions -->
+        <!-- Menu d'ajout de condition -->
         <div 
-          v-if="showAddMenu" 
+          v-if="showAddMenu"
           ref="menuRef"
-          @click.stop
-          class="absolute left-0 top-full mt-1 w-56 bg-white rounded-md shadow-lg p-3 border border-gray-200 text-sm z-50"
+          class="absolute z-10 left-0 top-full mt-1 bg-white rounded-md shadow-lg p-4 w-64 border border-gray-200"
         >
+          <!-- Modification du niveau d'épuisement si déjà présent -->
+          <div v-if="hasExhaustion && props.creatureType === 'player'" class="mb-3 p-2 bg-blue-50 rounded-md border border-blue-100">
+            <div class="text-xs font-medium text-gray-700 mb-1">Épuisement</div>
+            <div class="flex items-center justify-between">
+              <input 
+                v-model.number="exhaustionLevel" 
+                type="range" 
+                min="1" 
+                max="6" 
+                class="flex-grow h-3 mr-1"
+                style="min-width: 80px; max-width: 120px;"
+              />
+              <div class="flex items-center flex-shrink-0">
+                <span class="text-xs font-medium mr-1">Lvl {{ exhaustionLevel }}</span>
+                <button 
+                  @click="updateExhaustion"
+                  class="p-1 rounded text-white bg-green-500 hover:bg-green-600 mr-1"
+                  title="Mettre à jour"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                </button>
+                <button 
+                  @click="removeExhaustion"
+                  class="p-1 rounded text-white bg-red-500 hover:bg-red-600"
+                  title="Supprimer"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+          
           <!-- Sélection de condition -->
           <div class="mb-2">
             <select 
               v-if="availableConditions.length > 0"
-              v-model="selectedCondition"
-              class="w-full border border-gray-300 rounded-md px-2 py-1 text-sm"
-              :key="'condition-select-' + (props.conditions?.length || 0)"
+              v-model="selectedCondition" 
+              class="w-full p-2 border border-gray-300 rounded-md"
             >
               <option :value="null">Sélectionner un état</option>
               <option 
                 v-for="condition in availableConditions" 
-                :key="condition" 
+                :key="condition.id" 
                 :value="condition"
               >
-                {{ conditionTranslations[condition] }}
+                {{ condition.label }}
               </option>
             </select>
-            <div 
-              v-else
-              class="p-2 text-center text-gray-500 bg-gray-50 rounded-md"
-            >
-              Tous les états disponibles ont déjà été ajoutés.
+            <div v-else class="text-gray-500 text-sm">
+              Toutes les conditions sont déjà appliquées.
             </div>
           </div>
           
-          <!-- Durée de la condition -->
-          <div class="mb-2" v-if="selectedCondition !== Condition.EXHAUSTION">
+          <!-- Durée (pour les conditions autres que l'épuisement) -->
+          <div v-if="selectedCondition && selectedCondition.id !== Condition.EXHAUSTION.id" class="mb-2">
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              Durée (en tours)
+            </label>
             <input 
-              v-model.number="conditionDuration"
+              v-model.number="conditionDuration" 
               type="number" 
-              min="1" 
-              class="w-full border border-gray-300 rounded-md px-2 py-1 text-sm"
-              placeholder="Durée (optionnelle)"
+              min="1"
+              class="w-full p-2 border border-gray-300 rounded-md"
+              placeholder="Laisser vide pour permanent"
             />
-            <span class="text-xs">Durée en tours (optionnelle)</span>
           </div>
           
-          <!-- Gestion de l'épuisement -->
-          <div class="mb-2" v-if="props.creatureType === 'player' && (selectedCondition === Condition.EXHAUSTION || hasExhaustion)">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center">
-                <input 
-                  v-model.number="exhaustionLevel"
-                  type="range" 
-                  min="1" 
-                  max="6" 
-                  class="w-24 mr-2"
-                />
-                <span class="text-xs">Lvl {{ exhaustionLevel }}</span>
-              </div>
-              
-              <div v-if="!hasExhaustion">
-                <button 
-                  @click="updateExhaustion"
-                  class="bg-green-500 hover:bg-green-600 text-white p-1 rounded-sm text-xs"
-                  title="Ajouter l'épuisement"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                  </svg>
-                </button>
-              </div>
-              
-              <div v-else class="flex space-x-1">
-                <button 
-                  @click="updateExhaustion"
-                  class="bg-green-500 hover:bg-green-600 text-white p-1 rounded-sm text-xs"
-                  title="Mettre à jour le niveau d'épuisement"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                  </svg>
-                </button>
-                <button 
-                  @click="removeCondition(Condition.EXHAUSTION)"
-                  class="bg-red-500 hover:bg-red-600 text-white p-1 rounded-sm text-xs"
-                  title="Supprimer l'épuisement"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                  </svg>
-                </button>
-              </div>
+          <!-- Niveau d'épuisement (uniquement pour l'épuisement) -->
+          <div v-if="selectedCondition && selectedCondition.id === Condition.EXHAUSTION.id && props.creatureType === 'player'" class="mb-2">
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              Niveau d'épuisement
+            </label>
+            <div class="flex items-center">
+              <input 
+                v-model.number="exhaustionLevel" 
+                type="range" 
+                min="1" 
+                max="6" 
+                class="w-full mr-2"
+              />
+              <span class="text-sm font-medium">{{ exhaustionLevel }}</span>
             </div>
           </div>
           
@@ -267,10 +258,10 @@ onUnmounted(() => {
               @click="addCondition"
               :disabled="!selectedCondition || availableConditions.length === 0"
               :class="[
-                'px-2 py-0.5 rounded text-xs',
-                selectedCondition && availableConditions.length > 0
-                  ? 'bg-green-600 hover:bg-green-700 text-white' 
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                'px-3 py-1 rounded-md text-sm font-medium',
+                (!selectedCondition || availableConditions.length === 0) 
+                  ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
+                  : 'bg-blue-500 text-white hover:bg-blue-600'
               ]"
             >
               Ajouter
@@ -279,7 +270,7 @@ onUnmounted(() => {
             <button 
               v-if="props.conditions && props.conditions.length > 0"
               @click="clearAllConditions"
-              class="bg-red-500 hover:bg-red-600 text-white px-2 py-0.5 rounded text-xs"
+              class="px-3 py-1 rounded-md text-sm font-medium bg-red-500 text-white hover:bg-red-600"
             >
               Tout effacer
             </button>

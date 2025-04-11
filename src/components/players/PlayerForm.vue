@@ -8,7 +8,10 @@ const playerStore = usePlayerStore();
 const playerData = ref({
   name: '',
   initiative: 0,
-  dexterity: 10,
+  hp: undefined,
+  maxHp: undefined,
+  ac: 10,
+  dexterity: 10, // Conservé pour le calcul d'initiative mais pas stocké dans Player
   notes: '',
   conditions: []
 });
@@ -19,7 +22,9 @@ function handleSubmit() {
     const completePlayerData = {
       name: playerData.value.name,
       initiative: playerData.value.initiative ?? 0,
-      dexterity: playerData.value.dexterity ?? 10,
+      hp: playerData.value.hp !== undefined ? playerData.value.hp : undefined,
+      maxHp: playerData.value.maxHp !== undefined ? playerData.value.maxHp : undefined,
+      ac: playerData.value.ac ?? 10,
       notes: playerData.value.notes ?? '',
       conditions: playerData.value.conditions ?? []
     };
@@ -38,6 +43,9 @@ function resetForm() {
   playerData.value = {
     name: '',
     initiative: 0,
+    hp: undefined,
+    maxHp: undefined,
+    ac: 10,
     dexterity: 10,
     notes: '',
     conditions: []
@@ -69,6 +77,30 @@ function resetForm() {
         <label class="block text-sm font-medium mb-1">Dextérité</label>
         <input 
           v-model.number="playerData.dexterity" 
+          type="number" 
+          class="w-full p-2 border border-gray-300 rounded-md"
+        >
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Points de Vie <span class="text-gray-400 text-xs">(optionnel)</span></label>
+        <input 
+          v-model.number="playerData.hp" 
+          type="number" 
+          class="w-full p-2 border border-gray-300 rounded-md"
+        >
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">PV Maximum <span class="text-gray-400 text-xs">(optionnel)</span></label>
+        <input 
+          v-model.number="playerData.maxHp" 
+          type="number" 
+          class="w-full p-2 border border-gray-300 rounded-md"
+        >
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1">Classe d'Armure (CA)</label>
+        <input 
+          v-model.number="playerData.ac" 
           type="number" 
           class="w-full p-2 border border-gray-300 rounded-md"
         >
