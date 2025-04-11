@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useMonsterStore } from '../../stores/monster';
+import { useMonsterStore } from '@/stores/monster';
 
 const monsterStore = useMonsterStore();
 

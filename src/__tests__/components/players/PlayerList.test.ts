@@ -1,11 +1,10 @@
-import {beforeEach, describe, expect, it, vi} from 'vitest'
-import {mount} from '@vue/test-utils'
-import {createPinia, setActivePinia} from 'pinia'
-import {usePlayerStore} from '../../../stores/player'
-// Import components after mocking
-import PlayerList from '../../../components/players/PlayerList.vue'
-import PlayerForm from '../../../components/players/PlayerForm.vue'
-import PlayerCard from '../../../components/players/PlayerCard.vue'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { mount } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
+import { usePlayerStore } from '@/stores/player'
+import PlayerList from '@/components/players/PlayerList.vue'
+import PlayerForm from '@/components/players/PlayerForm.vue'
+import PlayerCard from '@/components/players/PlayerCard.vue'
 
 // Mock Sortable before importing PlayerList
 vi.mock('sortablejs', () => ({
@@ -15,7 +14,7 @@ vi.mock('sortablejs', () => ({
 }))
 
 // Mock child components to simplify testing
-vi.mock('../../../components/players/PlayerCard.vue', () => ({
+vi.mock('@/components/players/PlayerCard.vue', () => ({
   default: {
     name: 'PlayerCard',
     props: ['playerId'],
@@ -23,7 +22,7 @@ vi.mock('../../../components/players/PlayerCard.vue', () => ({
   }
 }))
 
-vi.mock('../../../components/players/PlayerForm.vue', () => ({
+vi.mock('@/components/players/PlayerForm.vue', () => ({
   default: {
     name: 'PlayerForm',
     template: '<div class="player-form">Player Form</div>'

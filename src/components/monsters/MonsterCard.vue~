@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { useMonsterStore } from '@/stores/monster';
-import MonsterStats from '@/components/monsters/MonsterStats.vue';
+import MonsterStats from './MonsterStats.vue';
 
 const props = defineProps<{
   monsterId: string;

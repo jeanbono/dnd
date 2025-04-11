@@ -2,8 +2,8 @@
 import { onMounted, ref } from 'vue';
 import { usePlayerStore } from '@/stores/player';
 import Sortable from 'sortablejs';
-import PlayerForm from '@/components/players/PlayerForm.vue';
-import PlayerCard from '@/components/players/PlayerCard.vue';
+import PlayerForm from './PlayerForm.vue';
+import PlayerCard from './PlayerCard.vue';
 
 const playerStore = usePlayerStore();
 const containerRef = ref<HTMLElement | null>(null);

@@ -1,8 +1,8 @@
-import {beforeEach, describe, expect, it, vi} from 'vitest'
-import {mount} from '@vue/test-utils'
-import {createPinia, setActivePinia} from 'pinia'
-import {usePlayerStore} from '../../../stores/player'
-import PlayerCard from '../../../components/players/PlayerCard.vue'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { mount } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
+import { usePlayerStore } from '@/stores/player'
+import PlayerCard from '@/components/players/PlayerCard.vue'
 
 describe('PlayerCard', () => {
   let store: ReturnType<typeof usePlayerStore>

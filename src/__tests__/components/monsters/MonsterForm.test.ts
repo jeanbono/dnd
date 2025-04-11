@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
-import { useMonsterStore } from '../../../stores/monster'
-import MonsterForm from '../../../components/monsters/MonsterForm.vue'
+import { useMonsterStore } from '@/stores/monster'
+import MonsterForm from '@/components/monsters/MonsterForm.vue'
 
 describe('MonsterForm', () => {
   let store: ReturnType<typeof useMonsterStore>

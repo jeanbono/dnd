@@ -1,11 +1,11 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest'
 import {mount} from '@vue/test-utils'
 import {createPinia, setActivePinia} from 'pinia'
-import MonsterList from '../../../components/monsters/MonsterList.vue'
-import {useMonsterStore} from '../../../stores/monster'
+import MonsterList from '@/components/monsters/MonsterList.vue'
+import {useMonsterStore} from '@/stores/monster'
 
 // Mock the components
-vi.mock('../../../components/monsters/MonsterCard.vue', () => ({
+vi.mock('@/components/monsters/MonsterCard.vue', () => ({
   default: {
     name: 'MonsterCard',
     template: '<div data-testid="monster-card">Monster Card</div>',
@@ -13,28 +13,28 @@ vi.mock('../../../components/monsters/MonsterCard.vue', () => ({
   }
 }))
 
-vi.mock('../../../components/monsters/MonsterForm.vue', () => ({
+vi.mock('@/components/monsters/MonsterForm.vue', () => ({
   default: {
     name: 'MonsterForm',
     template: '<div data-testid="monster-form">Monster Form</div>'
   }
 }))
 
-vi.mock('../../../components/monsters/MonsterSearch.vue', () => ({
+vi.mock('@/components/monsters/MonsterSearch.vue', () => ({
   default: {
     name: 'MonsterSearch',
     template: '<div data-testid="monster-search">Monster Search</div>'
   }
 }))
 
-vi.mock('../../../components/initiative/InitiativeOrder.vue', () => ({
+vi.mock('@/components/initiative/InitiativeOrder.vue', () => ({
   default: {
     name: 'InitiativeOrder',
     template: '<div data-testid="initiative-order">Initiative Order</div>'
   }
 }))
 
-vi.mock('../../../components/players/PlayerList.vue', () => ({
+vi.mock('@/components/players/PlayerList.vue', () => ({
   default: {
     name: 'PlayerList',
     template: '<div data-testid="player-list">Player List</div>'

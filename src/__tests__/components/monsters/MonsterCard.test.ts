@@ -1,11 +1,11 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest'
 import {mount} from '@vue/test-utils'
 import {createPinia, setActivePinia} from 'pinia'
-import {useMonsterStore} from '../../../stores/monster'
-import MonsterCard from '../../../components/monsters/MonsterCard.vue'
+import {useMonsterStore} from '@/stores/monster'
+import MonsterCard from '@/components/monsters/MonsterCard.vue'
 
 // Mock MonsterStats component
-vi.mock('../../../components/monsters/MonsterStats.vue', () => ({
+vi.mock('@/components/monsters/MonsterStats.vue', () => ({
   default: {
     name: 'MonsterStats',
     template: '<div data-testid="monster-stats">Monster Stats</div>',

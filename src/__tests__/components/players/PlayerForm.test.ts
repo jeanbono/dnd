@@ -1,8 +1,8 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest'
 import {mount} from '@vue/test-utils'
 import {createPinia, setActivePinia} from 'pinia'
-import {usePlayerStore} from '../../../stores/player'
-import PlayerForm from '../../../components/players/PlayerForm.vue'
+import {usePlayerStore} from '@/stores/player'
+import PlayerForm from '@/components/players/PlayerForm.vue'
 
 describe('PlayerForm', () => {
   let store: ReturnType<typeof usePlayerStore>

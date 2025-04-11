@@ -1,7 +1,7 @@
 import { setActivePinia, createPinia } from 'pinia'
-import { useMonsterStore } from '../../stores/monster'
+import { useMonsterStore } from '@/stores/monster'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { calculateAbilityModifier, getAbilityScoreDisplay } from '../../utils/abilityUtils'
+import { calculateAbilityModifier, getAbilityScoreDisplay } from '@/utils/abilityUtils'
 
 describe('Monster Store', () => {
   beforeEach(() => {

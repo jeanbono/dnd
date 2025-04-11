@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, watch, computed } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
-import { calculateAbilityModifier, getAbilityScoreDisplay } from '@/utils/abilityUtils';
+import { calculateAbilityModifier, getAbilityScoreDisplay } from '../utils/abilityUtils';
 
 export interface Monster {
   id: string;

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { usePlayerStore } from '../../stores/player';
+import { usePlayerStore } from '@/stores/player';
 
 const props = defineProps<{
   playerId: string;

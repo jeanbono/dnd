@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useMonsterStore } from '../../stores/monster';
-import { getAbilityScoreDisplay } from '../../utils/abilityUtils';
+import { useMonsterStore } from '@/stores/monster';
+import { getAbilityScoreDisplay } from '@/utils/abilityUtils';
 
 const props = defineProps<{
   monsterId: string;

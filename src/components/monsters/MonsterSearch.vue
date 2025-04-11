@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import { useMonsterStore } from '../../stores/monster';
+import { useMonsterStore } from '@/stores/monster';
 
 const store = useMonsterStore();
 const searchQuery = ref('');

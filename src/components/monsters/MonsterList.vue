@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { useMonsterStore } from '../../stores/monster';
+import { useMonsterStore } from '@/stores/monster';
 import Sortable from 'sortablejs';
-import MonsterSearch from './MonsterSearch.vue';
-import MonsterForm from './MonsterForm.vue';
-import MonsterCard from './MonsterCard.vue';
+import MonsterSearch from '@/components/monsters/MonsterSearch.vue';
+import MonsterForm from '@/components/monsters/MonsterForm.vue';
+import MonsterCard from '@/components/monsters/MonsterCard.vue';
 
 const monsterStore = useMonsterStore();
 const monsters = computed(() => monsterStore.monsters);
