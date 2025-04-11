@@ -20,7 +20,7 @@ const editedMonster = ref({
   hp: 0,
   maxHp: 0,
   ac: 0,
-  initiative: 0,
+  initiative: undefined as number | undefined,
   notes: '',
   strength: 10,
   dexterity: 10,
@@ -29,6 +29,9 @@ const editedMonster = ref({
   wisdom: 10,
   charisma: 10
 });
+
+const formSubmitted = ref(false);
+const initiativeInput = ref<HTMLInputElement | null>(null);
 
 // Mettre à jour les données d'édition lorsque le monstre change
 watch(monster, (newMonster) => {
@@ -78,14 +81,25 @@ const isRolling = ref(false);
 
 // Actions
 function saveChanges() {
-  if (isEditing.value) {
-    monsterStore.updateMonster(props.monsterId, editedMonster.value);
+  formSubmitted.value = true;
+  // Vérifier que le nom est rempli et que l'initiative est définie
+  if (editedMonster.value.name && 
+      initiativeInput.value && 
+      initiativeInput.value.value !== '') {
+    // Assurer que l'initiative est un nombre
+    const monsterData = {
+      ...editedMonster.value,
+      initiative: editedMonster.value.initiative || 0 // Utiliser 0 comme valeur par défaut si undefined
+    };
+    monsterStore.updateMonster(props.monsterId, monsterData);
     monsterStore.cancelEditingMonster();
+    formSubmitted.value = false;
   }
 }
 
 function cancelEditing() {
   monsterStore.cancelEditingMonster();
+  formSubmitted.value = false;
 }
 
 // Fonction pour lancer l'initiative
@@ -307,20 +321,35 @@ onUnmounted(() => {
       <div v-else class="flex flex-col">
         <div class="grid grid-cols-2 gap-2 mb-3">
           <div>
-            <label class="block text-sm font-medium mb-1">Nom</label>
+            <label class="block text-sm font-medium mb-1">
+              Nom <span class="text-red-500">*</span>
+            </label>
             <input 
               v-model="editedMonster.name" 
               type="text" 
-              class="w-full p-2 border border-gray-300 rounded-md"
+              class="w-full p-2 border rounded-md"
+              :class="{ 'border-red-500 bg-red-50': editedMonster.name === '' && formSubmitted, 'border-gray-300': !(editedMonster.name === '' && formSubmitted) }"
+              required
             >
+            <p v-if="editedMonster.name === '' && formSubmitted" class="mt-1 text-xs text-red-500">
+              Le nom est obligatoire
+            </p>
           </div>
           <div>
-            <label class="block text-sm font-medium mb-1">Initiative</label>
+            <label class="block text-sm font-medium mb-1">
+              Initiative <span class="text-red-500">*</span>
+            </label>
             <input 
               v-model.number="editedMonster.initiative" 
               type="number" 
-              class="w-full p-2 border border-gray-300 rounded-md"
+              class="w-full p-2 border rounded-md"
+              :class="{ 'border-red-500 bg-red-50': formSubmitted && initiativeInput && initiativeInput.value === '', 'border-gray-300': !(formSubmitted && initiativeInput && initiativeInput.value === '') }"
+              ref="initiativeInput"
+              required
             >
+            <p v-if="formSubmitted && initiativeInput && initiativeInput.value === ''" class="mt-1 text-xs text-red-500">
+              L'initiative est obligatoire
+            </p>
           </div>
           <div>
             <label class="block text-sm font-medium mb-1">CA</label>
@@ -391,19 +420,23 @@ onUnmounted(() => {
           ></textarea>
         </div>
         
-        <div class="flex justify-end space-x-2 mt-3">
-          <button 
-            @click="cancelEditing" 
-            class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-3 py-1 rounded-md text-sm"
-          >
-            Annuler
-          </button>
-          <button 
-            @click="saveChanges" 
-            class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md text-sm"
-          >
-            Enregistrer
-          </button>
+        <div class="flex justify-between items-center mt-4">
+          <p class="text-xs text-gray-500">Les champs marqués d'un <span class="text-red-500">*</span> sont obligatoires</p>
+          
+          <div class="flex space-x-2">
+            <button 
+              @click="cancelEditing" 
+              class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-3 py-1 rounded-md text-sm"
+            >
+              Annuler
+            </button>
+            <button 
+              @click="saveChanges" 
+              class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md text-sm"
+            >
+              Enregistrer
+            </button>
+          </div>
         </div>
       </div>
       

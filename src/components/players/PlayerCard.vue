@@ -16,13 +16,17 @@ const isEditing = computed(() => playerStore.editingPlayerId === props.playerId)
 // Données d'édition gérées localement
 const editedPlayer = ref({
   name: '',
-  initiative: 0,
+  initiative: undefined as number | undefined,
   hp: undefined as number | undefined,
   maxHp: undefined as number | undefined,
   ac: 10,
-  dexterity: 10,
+  dexterity: undefined as number | undefined,
   notes: ''
 });
+
+const formSubmitted = ref(false);
+const initiativeInput = ref<HTMLInputElement | null>(null);
+const dexterityInput = ref<HTMLInputElement | null>(null);
 
 // Mettre à jour les données d'édition quand le joueur change
 watch(() => player.value, (newPlayer) => {
@@ -33,8 +37,8 @@ watch(() => player.value, (newPlayer) => {
       hp: newPlayer.hp,
       maxHp: newPlayer.maxHp,
       ac: newPlayer.ac,
-      dexterity: 10, // Valeur par défaut car dexterity n'existe plus dans Player
-      notes: newPlayer.notes || ''
+      dexterity: newPlayer.dexterity, // Utiliser la dextérité du joueur
+      notes: newPlayer.notes
     };
   }
 }, { deep: true, immediate: true });
@@ -48,8 +52,8 @@ watch(isEditing, (editing) => {
       hp: player.value.hp,
       maxHp: player.value.maxHp,
       ac: player.value.ac,
-      dexterity: 10, // Valeur par défaut car dexterity n'existe plus dans Player
-      notes: player.value.notes || ''
+      dexterity: player.value.dexterity, // Utiliser la dextérité du joueur
+      notes: player.value.notes
     };
   }
 }, { immediate: true });
@@ -57,7 +61,7 @@ watch(isEditing, (editing) => {
 // Calculer le modificateur de dextérité
 const dexModifier = computed(() => {
   if (!player.value) return '';
-  const dex = player.value.initiative; // Utiliser l'initiative comme approximation de la dextérité
+  const dex = player.value.dexterity; // Utiliser la dextérité du joueur
   return playerStore.getAbilityModifierDisplay(dex);
 });
 
@@ -82,53 +86,71 @@ function startEditing() {
 
 function cancelEditing() {
   playerStore.cancelEditingPlayer();
+  formSubmitted.value = false;
 }
 
 function saveChanges() {
-  if (playerStore.editingPlayerId === props.playerId) {
-    playerStore.updatePlayer(props.playerId, editedPlayer.value);
-    playerStore.cancelEditingPlayer();
+  formSubmitted.value = true;
+  // Vérifier que le nom, l'initiative et la dextérité sont remplis
+  if (
+    editedPlayer.value.name && 
+    initiativeInput.value && initiativeInput.value.value !== '' &&
+    dexterityInput.value && dexterityInput.value.value !== ''
+  ) {
+    playerStore.updatePlayer(props.playerId, {
+      name: editedPlayer.value.name,
+      initiative: editedPlayer.value.initiative || 0, // Utiliser 0 comme valeur par défaut si undefined
+      hp: editedPlayer.value.hp,
+      maxHp: editedPlayer.value.maxHp,
+      ac: editedPlayer.value.ac,
+      dexterity: editedPlayer.value.dexterity || 0, // Utiliser 0 comme valeur par défaut si undefined
+      notes: editedPlayer.value.notes
+    });
+    formSubmitted.value = false;
   }
 }
 </script>
 
 <template>
   <div v-if="player" class="bg-white rounded-md shadow border border-gray-200 p-4">
-    <!-- View Mode -->
-    <div v-if="!isEditing" class="flex flex-col">
-      <div class="flex justify-between items-center">
-        <div class="flex items-center">
-          <div class="drag-handle cursor-move p-1 mr-2">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </div>
-          <div>
-            <h3 class="font-bold text-lg">{{ player.name }}</h3>
-            <div class="text-sm text-gray-500">
-              Initiative: {{ player.initiative }} | DEX: {{ dexModifier }}
-            </div>
-          </div>
+    <!-- En-tête du joueur - Toujours visible -->
+    <div class="flex justify-between items-center mb-3">
+      <div class="flex items-center">
+        <div class="drag-handle cursor-move p-1 mr-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
         </div>
-        
-        <div class="flex items-center space-x-2">
-          <button 
-            @click="startEditing" 
-            class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm"
-          >
-            Modifier
-          </button>
-          <button 
-            @click="playerStore.removePlayer(player.id)" 
-            class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-sm"
-          >
-            Supprimer
-          </button>
+        <div>
+          <h3 class="font-bold text-lg">{{ player.name }}</h3>
+          <div class="text-sm text-gray-500">
+            Initiative: {{ player.initiative }} | CA: {{ player.ac }} | DEX: {{ player.dexterity }} ({{ dexModifier }})
+          </div>
         </div>
       </div>
       
+      <div class="flex items-center space-x-2">
+        <button 
+          v-if="!isEditing"
+          @click="startEditing" 
+          class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm"
+        >
+          Modifier
+        </button>
+        <button 
+          v-if="!isEditing"
+          @click="playerStore.removePlayer(player.id)" 
+          class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-sm"
+        >
+          Supprimer
+        </button>
+      </div>
+    </div>
+    
+    <!-- View Mode -->
+    <div v-if="!isEditing" class="flex flex-col">
       <!-- Barre de points de vie -->
-      <div v-if="player && player.hp !== undefined && player.maxHp !== undefined && player.maxHp > 0" class="mt-2 px-4 pb-2">
+      <div v-if="player && player.hp !== undefined && player.maxHp !== undefined && player.maxHp > 0" class="mt-2">
         <div class="flex justify-between text-sm mb-1">
           <span>PV: {{ player.hp }} / {{ player.maxHp }}</span>
           
@@ -184,39 +206,53 @@ function saveChanges() {
     
     <!-- Edit Mode -->
     <div v-else class="flex flex-col">
-      <div class="flex items-center mb-3">
-        <div class="drag-handle cursor-move p-1 mr-2">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </div>
-        <h3 class="font-bold text-lg">Édition du joueur</h3>
-      </div>
-      
       <div class="grid grid-cols-3 gap-2 mb-3">
         <div>
-          <label class="block text-sm font-medium mb-1">Nom</label>
+          <label class="block text-sm font-medium mb-1">
+            Nom <span class="text-red-500">*</span>
+          </label>
           <input 
             v-model="editedPlayer.name" 
             type="text" 
-            class="w-full p-2 border border-gray-300 rounded-md"
+            class="w-full p-2 border rounded-md"
+            :class="{ 'border-red-500 bg-red-50': editedPlayer.name === '' && formSubmitted, 'border-gray-300': !(editedPlayer.name === '' && formSubmitted) }"
+            required
           >
+          <p v-if="editedPlayer.name === '' && formSubmitted" class="mt-1 text-xs text-red-500">
+            Le nom est obligatoire
+          </p>
         </div>
         <div>
-          <label class="block text-sm font-medium mb-1">Initiative</label>
+          <label class="block text-sm font-medium mb-1">
+            Initiative <span class="text-red-500">*</span>
+          </label>
           <input 
             v-model.number="editedPlayer.initiative" 
             type="number" 
-            class="w-full p-2 border border-gray-300 rounded-md"
+            class="w-full p-2 border rounded-md"
+            :class="{ 'border-red-500 bg-red-50': formSubmitted && initiativeInput && initiativeInput.value === '', 'border-gray-300': !(formSubmitted && initiativeInput && initiativeInput.value === '') }"
+            ref="initiativeInput"
+            required
           >
+          <p v-if="formSubmitted && initiativeInput && initiativeInput.value === ''" class="mt-1 text-xs text-red-500">
+            L'initiative est obligatoire
+          </p>
         </div>
         <div>
-          <label class="block text-sm font-medium mb-1">Dextérité</label>
+          <label class="block text-sm font-medium mb-1">
+            Dextérité <span class="text-red-500">*</span>
+          </label>
           <input 
             v-model.number="editedPlayer.dexterity" 
             type="number" 
-            class="w-full p-2 border border-gray-300 rounded-md"
+            class="w-full p-2 border rounded-md"
+            :class="{ 'border-red-500 bg-red-50': formSubmitted && dexterityInput && dexterityInput.value === '', 'border-gray-300': !(formSubmitted && dexterityInput && dexterityInput.value === '') }"
+            ref="dexterityInput"
+            required
           >
+          <p v-if="formSubmitted && dexterityInput && dexterityInput.value === ''" class="mt-1 text-xs text-red-500">
+            La dextérité est obligatoire
+          </p>
         </div>
       </div>
       
@@ -230,7 +266,7 @@ function saveChanges() {
           >
         </div>
         <div>
-          <label class="block text-sm font-medium mb-1">PV Maximum <span class="text-gray-400 text-xs">(optionnel)</span></label>
+          <label class="block text-sm font-medium mb-1">PV Max <span class="text-gray-400 text-xs">(optionnel)</span></label>
           <input 
             v-model.number="editedPlayer.maxHp" 
             type="number" 
@@ -238,7 +274,7 @@ function saveChanges() {
           >
         </div>
         <div>
-          <label class="block text-sm font-medium mb-1">Classe d'armure</label>
+          <label class="block text-sm font-medium mb-1">CA</label>
           <input 
             v-model.number="editedPlayer.ac" 
             type="number" 
@@ -247,28 +283,32 @@ function saveChanges() {
         </div>
       </div>
       
-      <div class="mt-2 mb-3">
+      <div class="mb-3">
         <label class="block text-sm font-medium mb-1">Notes</label>
         <textarea 
           v-model="editedPlayer.notes" 
-          rows="2"
+          rows="3" 
           class="w-full p-2 border border-gray-300 rounded-md"
         ></textarea>
       </div>
       
-      <div class="flex justify-end space-x-2">
-        <button 
-          @click="cancelEditing" 
-          class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-3 py-1 rounded-md text-sm"
-        >
-          Annuler
-        </button>
-        <button 
-          @click="saveChanges" 
-          class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md text-sm"
-        >
-          Enregistrer
-        </button>
+      <div class="flex justify-between items-center mt-4">
+        <p class="text-xs text-gray-500">Les champs marqués d'un <span class="text-red-500">*</span> sont obligatoires</p>
+        
+        <div class="flex space-x-2">
+          <button 
+            @click="cancelEditing" 
+            class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-3 py-1 rounded-md text-sm"
+          >
+            Annuler
+          </button>
+          <button 
+            @click="saveChanges" 
+            class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md text-sm"
+          >
+            Enregistrer
+          </button>
+        </div>
       </div>
     </div>
   </div>

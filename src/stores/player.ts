@@ -11,6 +11,7 @@ export interface Player {
   hp?: number;
   maxHp?: number;
   ac: number;
+  dexterity: number;
   notes: string;
   conditions: { condition: ConditionData; level?: number; duration?: number }[];
 }
@@ -36,24 +37,33 @@ export const usePlayerStore = defineStore('player', () => {
       hp: playerData.hp,
       maxHp: playerData.maxHp,
       ac: playerData.ac !== undefined ? playerData.ac : 10,
+      dexterity: playerData.dexterity || 10,
       notes: playerData.notes || '',
       conditions: playerData.conditions || []
     };
 
-    const player: Player = {
+    const newPlayer: Player = {
       id: uuidv4(),
       ...defaultData
     };
-    players.value.push(player);
+
+    players.value.push(newPlayer);
     isAddingPlayer.value = false;
+    return newPlayer;
   }
 
-  function updatePlayer(id: string, data: Partial<Omit<Player, 'id'>>) {
-    const index = players.value.findIndex(p => p.id === id);
-    if (index !== -1) {
-      players.value[index] = { ...players.value[index], ...data };
+  function updatePlayer(playerId: string, playerData: Partial<Omit<Player, 'id'>>) {
+    const playerIndex = players.value.findIndex(p => p.id === playerId);
+    if (playerIndex !== -1) {
+      // Mettre à jour seulement les champs fournis
+      const updatedPlayer = {
+        ...players.value[playerIndex],
+        ...playerData
+      };
+      
+      players.value[playerIndex] = updatedPlayer;
+      editingPlayerId.value = null;
     }
-    editingPlayerId.value = null;
   }
 
   function updatePlayerHp(id: string, change: number) {
