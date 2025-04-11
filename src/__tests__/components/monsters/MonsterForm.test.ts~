@@ -1,0 +1,94 @@
+import { mount } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import MonsterForm from '../../../components/monsters/MonsterForm.vue'
+import { useMonsterStore } from '../../../stores/monster'
+
+// Mock du store
+vi.mock('../../../stores/monster', () => ({
+  useMonsterStore: vi.fn(() => ({
+    addMonster: vi.fn(),
+    cancelAddingMonster: vi.fn(),
+    editingMonsterId: null,
+    isAddingMonster: true
+  }))
+}))
+
+describe('MonsterForm', () => {
+  beforeEach(() => {
+    // Réinitialiser les mocks
+    vi.clearAllMocks()
+  })
+
+  it('initializes with empty form fields', () => {
+    const wrapper = mount(MonsterForm)
+    
+    // Vérifier que les champs sont vides ou avec les valeurs par défaut
+    expect(wrapper.find('input[type="text"]').element.value).toBe('')
+    expect(wrapper.find('textarea').element.value).toBe('')
+    
+    // Vérifier les valeurs numériques par défaut
+    const numberInputs = wrapper.findAll('input[type="number"]')
+    expect(numberInputs[0].element.value).toBe('0') // initiative
+    expect(numberInputs[1].element.value).toBe('0') // hp
+    expect(numberInputs[2].element.value).toBe('0') // maxHp
+    expect(numberInputs[3].element.value).toBe('0') // ac
+    expect(numberInputs[4].element.value).toBe('10') // strength
+    expect(numberInputs[5].element.value).toBe('10') // dexterity
+  })
+
+  it('submits the form with correct data', async () => {
+    const mockStore = useMonsterStore()
+    const wrapper = mount(MonsterForm)
+    
+    // Remplir le formulaire
+    await wrapper.find('input[type="text"]').setValue('Test Monster')
+    await wrapper.findAll('input[type="number"]')[0].setValue(3) // initiative
+    await wrapper.findAll('input[type="number"]')[1].setValue(20) // hp
+    await wrapper.findAll('input[type="number"]')[2].setValue(20) // maxHp
+    await wrapper.findAll('input[type="number"]')[3].setValue(15) // ac
+    await wrapper.find('textarea').setValue('Test notes')
+    
+    // Soumettre le formulaire
+    await wrapper.find('button.bg-green-600').trigger('click')
+    
+    // Vérifier que addMonster a été appelé avec les bonnes données
+    expect(mockStore.addMonster).toHaveBeenCalledWith(expect.objectContaining({
+      name: 'Test Monster',
+      initiative: 3,
+      hp: 20,
+      maxHp: 20,
+      ac: 15,
+      notes: 'Test notes'
+    }))
+  })
+
+  it('cancels form submission', async () => {
+    const mockStore = useMonsterStore()
+    const wrapper = mount(MonsterForm)
+    
+    // Cliquer sur le bouton Annuler
+    await wrapper.find('button.bg-gray-300').trigger('click')
+    
+    // Vérifier que cancelAddingMonster a été appelé
+    expect(mockStore.cancelAddingMonster).toHaveBeenCalled()
+  })
+
+  it('keeps form empty even when a monster is being edited', async () => {
+    // Configurer le mock pour simuler l'édition d'un monstre
+    vi.mocked(useMonsterStore).mockReturnValue({
+      addMonster: vi.fn(),
+      cancelAddingMonster: vi.fn(),
+      editingMonsterId: 'monster-123', // Simuler l'édition d'un monstre
+      isAddingMonster: true
+    })
+    
+    const wrapper = mount(MonsterForm)
+    
+    // Vérifier que le formulaire est vide malgré l'édition en cours
+    expect(wrapper.find('input[type="text"]').element.value).toBe('')
+    expect(wrapper.findAll('input[type="number"]')[0].element.value).toBe('0') // initiative
+    expect(wrapper.findAll('input[type="number"]')[1].element.value).toBe('0') // hp
+    expect(wrapper.findAll('input[type="number"]')[2].element.value).toBe('0') // maxHp
+  })
+})

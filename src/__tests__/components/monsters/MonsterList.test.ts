@@ -118,6 +118,39 @@ describe('MonsterList', () => {
     expect(wrapper.findAll('button')[0].text()).toBe('Annuler')
   })
 
+  it('shows monster form with empty fields even when a monster is being edited', async () => {
+    const store = useMonsterStore()
+    
+    // Ajouter un monstre au store
+    store.addMonster({
+      name: 'Existing Monster',
+      initiative: 5,
+      hp: 30,
+      maxHp: 30,
+      ac: 16,
+      notes: 'Existing notes'
+    })
+    
+    // Commencer l'édition du monstre
+    store.startEditingMonster(store.monsters[0].id)
+    
+    // Activer le formulaire d'ajout
+    store.isAddingMonster = true
+    
+    const wrapper = mount(MonsterList)
+    
+    // Force a re-render
+    await wrapper.vm.$nextTick()
+    
+    // Vérifier que le formulaire est affiché
+    expect(wrapper.find('[data-testid="monster-form"]').exists()).toBe(true)
+    
+    // Le formulaire est mocké, donc on ne peut pas vérifier son contenu directement
+    // Mais on peut vérifier que l'état d'édition est toujours actif
+    expect(store.isEditingAnyMonster).toBe(true)
+    expect(store.isAddingMonster).toBe(true)
+  })
+
   it('shows monster search when search button is clicked', async () => {
     const wrapper = mount(MonsterList)
 

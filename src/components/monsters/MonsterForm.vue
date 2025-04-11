@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { ref } from 'vue';
 import { useMonsterStore } from '../../stores/monster';
 
 const monsterStore = useMonsterStore();
-const isEditing = computed(() => !!monsterStore.editingMonsterId);
 
 // Données du formulaire gérées localement
 const monsterData = ref({
@@ -21,49 +20,13 @@ const monsterData = ref({
   charisma: 10
 });
 
-// Si nous sommes en mode édition, charger les données du monstre
-watch(() => monsterStore.editingMonsterId, (newId) => {
-  if (newId) {
-    const monster = monsterStore.getMonsterById(newId);
-    if (monster) {
-      monsterData.value = {
-        name: monster.name,
-        initiative: monster.initiative,
-        hp: monster.hp,
-        maxHp: monster.maxHp,
-        ac: monster.ac,
-        notes: monster.notes || '',
-        strength: monster.strength || 10,
-        dexterity: monster.dexterity || 10,
-        constitution: monster.constitution || 10,
-        intelligence: monster.intelligence || 10,
-        wisdom: monster.wisdom || 10,
-        charisma: monster.charisma || 10
-      };
-    }
-  } else {
-    resetForm();
-  }
-}, { immediate: true });
-
 function handleSubmit() {
-  if (isEditing.value) {
-    if (monsterStore.editingMonsterId) {
-      monsterStore.updateMonster(monsterStore.editingMonsterId, monsterData.value);
-      monsterStore.cancelEditingMonster();
-    }
-  } else {
-    monsterStore.addMonster(monsterData.value);
-  }
+  monsterStore.addMonster(monsterData.value);
   resetForm();
 }
 
 function handleCancel() {
-  if (isEditing.value) {
-    monsterStore.cancelEditingMonster();
-  } else {
-    monsterStore.cancelAddingMonster();
-  }
+  monsterStore.cancelAddingMonster();
   resetForm();
 }
 
@@ -87,7 +50,7 @@ function resetForm() {
 
 <template>
   <div class="bg-gray-100 p-4 rounded-md mb-6">
-    <h3 class="font-semibold mb-3">{{ isEditing ? 'Modifier le Monstre' : 'Ajouter un Monstre' }}</h3>
+    <h3 class="font-semibold mb-3">Ajouter un Monstre</h3>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div>
         <label class="block text-sm font-medium mb-1">Nom</label>
@@ -196,7 +159,7 @@ function resetForm() {
         @click="handleSubmit" 
         class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md cursor-pointer"
       >
-        {{ isEditing ? 'Enregistrer les Modifications' : 'Ajouter le Monstre' }}
+        Ajouter le Monstre
       </button>
       <button 
         @click="handleCancel" 
