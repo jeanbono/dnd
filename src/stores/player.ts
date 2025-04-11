@@ -18,7 +18,7 @@ export const usePlayerStore = defineStore('player', () => {
   const players = ref<Player[]>([]);
   const isAddingPlayer = ref(false);
   const editingPlayerId = ref<string | null>(null);
-  
+
   // Computed properties
   const isEditingAnyPlayer = computed(() => editingPlayerId.value !== null);
   const currentEditingPlayer = computed(() => {
@@ -36,7 +36,7 @@ export const usePlayerStore = defineStore('player', () => {
       notes: playerData.notes || '',
       conditions: playerData.conditions || []
     };
-    
+
     const player: Player = {
       id: uuidv4(),
       ...defaultData
@@ -59,7 +59,7 @@ export const usePlayerStore = defineStore('player', () => {
   function removePlayer(id: string) {
     if (confirm('Êtes-vous sûr de vouloir supprimer ce joueur ?')) {
       players.value = players.value.filter(player => player.id !== id);
-      
+
       // If we were editing this player, reset the editing state
       if (editingPlayerId.value === id) {
         editingPlayerId.value = null;
@@ -79,15 +79,15 @@ export const usePlayerStore = defineStore('player', () => {
   function startAddingPlayer() {
     isAddingPlayer.value = true;
   }
-  
+
   function cancelAddingPlayer() {
     isAddingPlayer.value = false;
   }
-  
+
   function startEditingPlayer(id: string) {
     editingPlayerId.value = id;
   }
-  
+
   function cancelEditingPlayer() {
     editingPlayerId.value = null;
   }
@@ -96,7 +96,7 @@ export const usePlayerStore = defineStore('player', () => {
   function getAbilityModifier(score: number): number {
     return Math.floor((score - 10) / 2);
   }
-  
+
   function getAbilityModifierDisplay(score: number): string {
     const mod = getAbilityModifier(score);
     return mod >= 0 ? `+${mod}` : `${mod}`;
@@ -106,10 +106,10 @@ export const usePlayerStore = defineStore('player', () => {
   function addCondition(playerId: string, condition: Condition, duration?: number | null, level?: number) {
     const player = getPlayerById(playerId);
     if (!player) return;
-    
+
     // Vérifier si la condition existe déjà
     const existingConditionIndex = player.conditions.findIndex(c => c.condition === condition);
-    
+
     if (existingConditionIndex >= 0) {
       // Si c'est l'épuisement, on incrémente le niveau
       if (condition === Condition.EXHAUSTION && level) {
@@ -118,7 +118,7 @@ export const usePlayerStore = defineStore('player', () => {
       // Sinon, la condition existe déjà, on ne fait rien
       return;
     }
-    
+
     // Ajouter la nouvelle condition
     player.conditions.push({
       condition,
@@ -126,21 +126,21 @@ export const usePlayerStore = defineStore('player', () => {
       duration: condition !== Condition.EXHAUSTION && duration && duration > 0 ? duration : undefined
     });
   }
-  
+
   function removeCondition(playerId: string, condition: Condition) {
     const player = getPlayerById(playerId);
     if (!player) return;
-    
+
     player.conditions = player.conditions.filter(c => c.condition !== condition);
   }
-  
+
   function updateExhaustionLevel(playerId: string, level: number) {
     const player = getPlayerById(playerId);
     if (!player) return;
-    
+
     // Vérifier si le joueur a déjà l'épuisement
     const exhaustionIndex = player.conditions.findIndex(c => c.condition === Condition.EXHAUSTION);
-    
+
     if (level <= 0) {
       // Supprimer l'épuisement si le niveau est 0 ou négatif
       if (exhaustionIndex >= 0) {
@@ -162,25 +162,25 @@ export const usePlayerStore = defineStore('player', () => {
       }
     }
   }
-  
+
   function hasCondition(playerId: string, condition: Condition): boolean {
     const player = getPlayerById(playerId);
     if (!player) return false;
-    
+
     return player.conditions.some(c => c.condition === condition);
   }
-  
+
   function getExhaustionLevelForPlayer(playerId: string): number {
     const player = getPlayerById(playerId);
     if (!player) return 0;
-    
+
     return getExhaustionLevel(player.conditions);
   }
-  
+
   function clearAllConditions(playerId: string) {
     const player = getPlayerById(playerId);
     if (!player) return;
-    
+
     player.conditions = [];
   }
 
@@ -188,14 +188,14 @@ export const usePlayerStore = defineStore('player', () => {
     players.value.forEach(player => {
       // Créer un tableau des conditions à supprimer
       const conditionsToRemove: Condition[] = [];
-      
+
       // Vérifier chaque condition
       player.conditions.forEach(condition => {
         if (decrementConditionDuration(condition)) {
           conditionsToRemove.push(condition.condition);
         }
       });
-      
+
       // Supprimer les conditions expirées
       conditionsToRemove.forEach(condition => {
         removeCondition(player.id, condition);
@@ -214,11 +214,11 @@ export const usePlayerStore = defineStore('player', () => {
     players,
     isAddingPlayer,
     editingPlayerId,
-    
+
     // Computed
     isEditingAnyPlayer,
     currentEditingPlayer,
-    
+
     // Functions
     addPlayer,
     updatePlayer,
@@ -232,7 +232,7 @@ export const usePlayerStore = defineStore('player', () => {
     cancelEditingPlayer,
     getAbilityModifier,
     getAbilityModifierDisplay,
-    
+
     // Conditions
     addCondition,
     removeCondition,
@@ -244,4 +244,10 @@ export const usePlayerStore = defineStore('player', () => {
     decrementConditionDurations
   };
 },
-{ persist: true });
+{
+  persist: {
+    pick: [
+      'players'
+    ],
+  }
+});

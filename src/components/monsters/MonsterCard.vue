@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, onUnmounted } from 'vue';
 import { useMonsterStore } from '@/stores/monster';
 import MonsterStats from '@/components/monsters/MonsterStats.vue';
 import ConditionManager from '@/components/conditions/ConditionManager.vue';
@@ -8,21 +8,19 @@ const props = defineProps<{
   monsterId: string;
 }>();
 
+const emit = defineEmits([]);
+
 const monsterStore = useMonsterStore();
 const monster = computed(() => monsterStore.getMonsterById(props.monsterId)!);
 
-// Computed properties
-const isExpanded = computed(() => monsterStore.isExpanded(props.monsterId));
+// État d'édition
 const isEditing = computed(() => monsterStore.editingMonsterId === props.monsterId);
-const showStats = computed(() => monsterStore.isStatsShown(props.monsterId));
-
-// Données d'édition gérées localement
 const editedMonster = ref({
   name: '',
-  initiative: 0,
   hp: 0,
   maxHp: 0,
   ac: 0,
+  initiative: 0,
   notes: '',
   strength: 10,
   dexterity: 10,
@@ -32,16 +30,16 @@ const editedMonster = ref({
   charisma: 10
 });
 
-// Mettre à jour les données d'édition quand le monstre change
-watch(() => monster.value, (newMonster) => {
-  if (newMonster && !isEditing.value) {
+// Mettre à jour les données d'édition lorsque le monstre change
+watch(monster, (newMonster) => {
+  if (newMonster) {
     editedMonster.value = {
       name: newMonster.name,
-      initiative: newMonster.initiative,
       hp: newMonster.hp,
       maxHp: newMonster.maxHp,
       ac: newMonster.ac,
-      notes: newMonster.notes || '',
+      initiative: newMonster.initiative,
+      notes: newMonster.notes,
       strength: newMonster.strength || 10,
       dexterity: newMonster.dexterity || 10,
       constitution: newMonster.constitution || 10,
@@ -50,41 +48,33 @@ watch(() => monster.value, (newMonster) => {
       charisma: newMonster.charisma || 10
     };
   }
-}, { deep: true, immediate: true });
+}, { immediate: true });
 
-// Réinitialiser les données d'édition quand on entre en mode édition
-watch(isEditing, (editing) => {
-  if (editing && monster.value) {
-    editedMonster.value = {
-      name: monster.value.name,
-      initiative: monster.value.initiative,
-      hp: monster.value.hp,
-      maxHp: monster.value.maxHp,
-      ac: monster.value.ac,
-      notes: monster.value.notes || '',
-      strength: monster.value.strength || 10,
-      dexterity: monster.value.dexterity || 10,
-      constitution: monster.value.constitution || 10,
-      intelligence: monster.value.intelligence || 10,
-      wisdom: monster.value.wisdom || 10,
-      charisma: monster.value.charisma || 10
-    };
-  }
-});
-
+// Computed properties
 const hpPercentage = computed(() => {
-  if (!monster.value) return 0;
-  const percentage = (monster.value.hp / monster.value.maxHp) * 100;
-  return Math.max(0, Math.min(100, percentage));
+  if (!monster.value || monster.value.maxHp === 0) return 0;
+  return Math.max(0, Math.min(100, (monster.value.hp / monster.value.maxHp) * 100));
 });
 
 const hpColor = computed(() => {
-  if (hpPercentage.value > 50) return 'bg-green-500';
-  if (hpPercentage.value > 25) return 'bg-yellow-500';
+  const percentage = hpPercentage.value;
+  if (percentage > 50) return 'bg-green-500';
+  if (percentage > 25) return 'bg-yellow-500';
   return 'bg-red-500';
 });
 
-const rollResult = computed(() => monsterStore.rollResult);
+const isExpanded = computed(() => {
+  return monsterStore.isExpanded(props.monsterId);
+});
+
+const showStats = computed(() => {
+  return monsterStore.isStatsShown(props.monsterId);
+});
+
+// Gestion locale du résultat du lancer d'initiative
+const rollResult = ref<{ roll: number, modifier: number, total: number } | null>(null);
+let clearInitiativeTimer: number | null = null;
+const isRolling = ref(false);
 
 // Actions
 function saveChanges() {
@@ -97,12 +87,66 @@ function saveChanges() {
 function cancelEditing() {
   monsterStore.cancelEditingMonster();
 }
+
+// Fonction pour lancer l'initiative
+function rollInitiative() {
+  // Annuler tout timer précédent
+  if (clearInitiativeTimer) {
+    clearTimeout(clearInitiativeTimer);
+    clearInitiativeTimer = null;
+  }
+  
+  // Activer l'animation
+  isRolling.value = true;
+  
+  // Exécuter le roll immédiatement via le store
+  const result = monsterStore.rollInitiative(props.monsterId);
+  
+  // Stocker le résultat localement pour l'affichage
+  rollResult.value = result;
+  
+  // Programmer l'effacement du résultat après 3 secondes
+  clearInitiativeTimer = window.setTimeout(() => {
+    rollResult.value = null;
+    isRolling.value = false;
+    clearInitiativeTimer = null;
+  }, 3000);
+}
+
+// Exposer la méthode pour qu'elle puisse être appelée par le parent
+defineExpose({
+  rollInitiative
+});
+
+// S'assurer d'annuler le timer si le composant est détruit
+onUnmounted(() => {
+  if (clearInitiativeTimer) {
+    clearTimeout(clearInitiativeTimer);
+  }
+});
 </script>
+
+<style scoped>
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateY(-10px); }
+  10% { opacity: 1; transform: translateY(0); }
+  90% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-10px); }
+}
+
+.initiative-result-animation {
+  animation: fadeInOut 3s ease-in-out;
+}
+
+.ring-transition {
+  transition: box-shadow 0.3s ease-in-out, border-color 0.3s ease-in-out;
+}
+</style>
 
 <template>
   <div 
-    class="bg-white rounded-md shadow border border-gray-200 flex flex-col"
-    :class="{ 'ring-2 ring-purple-500': rollResult && rollResult.monsterId === monsterId }"
+    class="bg-white rounded-md shadow border border-gray-200 flex flex-col ring-transition"
+    :class="{ 'ring-2 ring-purple-500 border-purple-300': isRolling }"
     :id="`monster-${monsterId}`"
   >
     <!-- Monster Header - Always Visible -->
@@ -194,8 +238,9 @@ function cancelEditing() {
     <div v-if="isExpanded" class="px-4 pb-4">
       <!-- Roll Result Animation -->
       <div 
-        v-if="rollResult && rollResult.monsterId === monsterId" 
-        class="bg-purple-100 p-2 rounded-md mb-2 text-sm animate-pulse"
+        v-if="rollResult" 
+        class="bg-purple-100 p-2 rounded-md mb-2 text-sm initiative-result-animation transition-all duration-300 ease-in-out"
+        :class="{ 'opacity-100': isRolling, 'opacity-0': !isRolling }"
       >
         Initiative: {{ rollResult.roll }} + {{ rollResult.modifier }} = {{ rollResult.total }}
       </div>
@@ -226,7 +271,7 @@ function cancelEditing() {
           
           <div class="flex space-x-2">
             <button 
-              @click="monsterStore.rollInitiative(monsterId)" 
+              @click="rollInitiative" 
               class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded-md text-sm"
             >
               Lancer Initiative

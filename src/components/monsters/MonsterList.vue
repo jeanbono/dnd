@@ -10,6 +10,7 @@ const monsterStore = useMonsterStore();
 const monsters = computed(() => monsterStore.monsters);
 const containerRef = ref<HTMLElement | null>(null);
 const showMonsterSearch = ref(false);
+const monsterCardRefs = ref<Record<string, any>>({});
 
 onMounted(() => {
   setupSortable();
@@ -35,8 +36,15 @@ function setupSortable() {
 }
 
 function rollAllInitiatives() {
+  // Récupérer toutes les références aux composants MonsterCard
+  const refs = monsterCardRefs.value;
+  
+  // Lancer l'initiative pour chaque monstre
   monsters.value.forEach(monster => {
-    monsterStore.rollInitiative(monster.id);
+    const ref = refs[monster.id];
+    if (ref && typeof ref.rollInitiative === 'function') {
+      ref.rollInitiative();
+    }
   });
 }
 </script>
@@ -89,6 +97,7 @@ function rollAllInitiatives() {
       v-for="monster in monsters"
       :key="monster.id"
       :monsterId="monster.id"
+      :ref="el => { if (el) monsterCardRefs[monster.id] = el }"
     />
   </div>
 </template>

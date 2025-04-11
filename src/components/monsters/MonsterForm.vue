@@ -27,7 +27,7 @@ function handleSubmit() {
 }
 
 function handleCancel() {
-  monsterStore.cancelAddingMonster();
+  monsterStore.toggleAddingMonster();
   resetForm();
 }
 

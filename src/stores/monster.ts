@@ -71,7 +71,6 @@ export const useMonsterStore = defineStore('monsters', () => {
   const editingMonsterId = ref<string | null>(null);
   const showStatsForMonster = ref<Record<string, boolean>>({});
   const expandedMonsters = ref<Record<string, boolean>>({});
-  const rollResult = ref<{ monsterId: string, roll: number, modifier: number, total: number } | null>(null);
   
   // Computed properties
   const isEditingAnyMonster = computed(() => editingMonsterId.value !== null);
@@ -176,51 +175,37 @@ export const useMonsterStore = defineStore('monsters', () => {
     editingMonsterId.value = null;
   }
   
+  // Toggle adding monster state
+  function toggleAddingMonster() {
+    isAddingMonster.value = !isAddingMonster.value;
+  }
+  
   // Roll initiative for a monster based on its dexterity
-  function rollInitiative(id: string) {
+  function rollInitiative(id: string): { monsterId: string, roll: number, modifier: number, total: number } {
     const monster = monsters.value.find(m => m.id === id);
-    if (!monster) return;
+    if (!monster) return { monsterId: id, roll: 0, modifier: 0, total: 0 };
     
     // Get dexterity modifier
     const dexMod = monster.dexterity ? calculateAbilityModifier(monster.dexterity) : 0;
     
     // Roll d20
     const roll = Math.floor(Math.random() * 20) + 1;
-    
-    // Calculate total
     const total = roll + dexMod;
     
     // Update monster initiative
     updateMonster(id, { initiative: total });
     
-    // Store roll result for display
-    rollResult.value = {
-      monsterId: id,
-      roll,
-      modifier: dexMod,
-      total
-    };
-    
-    // Clear roll result after 3 seconds
-    setTimeout(() => {
-      if (rollResult.value?.monsterId === id) {
-        rollResult.value = null;
-      }
-    }, 3000);
+    return { monsterId: id, roll, modifier: dexMod, total };
   }
   
   function rollAllInitiatives() {
+    const results: { monsterId: string, roll: number, modifier: number, total: number }[] = [];
     monsters.value.forEach(monster => {
-      rollInitiative(monster.id);
+      const result = rollInitiative(monster.id);
+      results.push(result);
     });
-  }
-  
-  function toggleAddingMonster() {
-    isAddingMonster.value = !isAddingMonster.value;
-    if (!isAddingMonster.value) {
-      // Si on ferme le formulaire d'ajout, réinitialiser l'état d'édition
-      editingMonsterId.value = null;
-    }
+    
+    return results;
   }
   
   function addMonsterFromTemp() {
@@ -404,7 +389,7 @@ export const useMonsterStore = defineStore('monsters', () => {
       monster.conditions = [];
     });
   }
-
+  
   return {
     // State
     monsters,
@@ -413,8 +398,8 @@ export const useMonsterStore = defineStore('monsters', () => {
     searchError,
     isAddingMonster,
     editingMonsterId,
+    showStatsForMonster,
     expandedMonsters,
-    rollResult,
     
     // Computed
     isEditingAnyMonster,
@@ -422,36 +407,42 @@ export const useMonsterStore = defineStore('monsters', () => {
     
     // Functions
     addMonster,
-    removeMonster,
     updateMonster,
     updateMonsterHp,
-    reorderMonsters,
-    toggleExpand,
-    isExpanded,
-    toggleStats,
-    isStatsShown,
-    startAddingMonster,
-    cancelAddingMonster,
-    startEditingMonster,
-    cancelEditingMonster,
-    rollInitiative,
-    rollAllInitiatives,
-    toggleAddingMonster,
+    removeMonster,
+    addMonsterFromApi,
     addMonsterFromTemp,
     getMonsterById,
     searchMonsters,
-    addMonsterFromApi,
-    createNotesFromApiData,
-    getAbilityScoreDisplay,
-    
-    // Conditions
+    rollInitiative,
+    rollAllInitiatives,
+    toggleAddingMonster,
+    startEditingMonster,
+    cancelEditingMonster,
+    toggleStats,
+    toggleExpand,
+    isExpanded,
+    isStatsShown,
+    reorderMonsters,
     addCondition,
     removeCondition,
     hasCondition,
     clearAllConditions,
     decrementConditionDurations,
     removeAllMonsters,
-    clearAllMonstersConditions
+    clearAllMonstersConditions,
+    createNotesFromApiData,
+    getAbilityScoreDisplay,
+    startAddingMonster,
+    cancelAddingMonster
   };
 },
-{ persist: true });
+{ 
+  persist: {
+    pick: [
+      'monsters', 
+      'expandedMonsters', 
+      'showStatsForMonster'
+    ]
+  } 
+});
