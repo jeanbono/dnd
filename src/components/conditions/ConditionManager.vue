@@ -95,6 +95,8 @@ function removeCondition(condition: Condition) {
   } else {
     playerStore.removeCondition(props.creatureId, condition);
   }
+  // Fermer le menu après avoir supprimé une condition
+  showAddMenu.value = false;
 }
 
 // Effacer toutes les conditions
