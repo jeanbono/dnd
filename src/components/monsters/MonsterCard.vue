@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue';
 import { useMonsterStore } from '@/stores/monster';
 import MonsterStats from '@/components/monsters/MonsterStats.vue';
+import ConditionManager from '@/components/conditions/ConditionManager.vue';
 
 const props = defineProps<{
   monsterId: string;
@@ -240,14 +241,16 @@ function cancelEditing() {
         </div>
         
         <!-- Stats Panel -->
-        <div 
-          v-if="showStats" 
-          class="bg-gray-50 border border-gray-200 rounded-md p-3 mb-3 transition-all duration-300"
-        >
-          <MonsterStats 
-            :monsterId="monsterId" 
-          />
-        </div>
+        <MonsterStats v-if="showStats" :monsterId="monsterId" class="mb-4" />
+        
+        <!-- Gestionnaire de conditions -->
+        <ConditionManager 
+          v-if="!isEditing"
+          :conditions="monster.conditions"
+          creature-type="monster"
+          :creature-id="monsterId"
+          class="mb-4"
+        />
         
         <div v-if="monster?.notes" class="mt-2">
           <h4 class="font-semibold text-sm mb-1">Notes:</h4>

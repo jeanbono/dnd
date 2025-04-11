@@ -2,6 +2,8 @@
 import { computed, ref } from 'vue';
 import { useMonsterStore } from '@/stores/monster';
 import { usePlayerStore } from '@/stores/player';
+import { hasDisadvantage, conditionTranslations } from '@/utils/conditionUtils';
+import type { ConditionWithLevel } from '@/utils/conditionUtils';
 
 const monsterStore = useMonsterStore();
 const playerStore = usePlayerStore();
@@ -28,14 +30,18 @@ const initiativeOrder = computed(() => {
       name: monster.name,
       initiative: monster.initiative,
       dexterity: monster.dexterity,
-      type: 'monster'
+      type: 'monster',
+      conditions: monster.conditions,
+      hasDisadvantage: hasDisadvantage(monster.conditions)
     })),
     ...playerStore.players.map(player => ({
       id: player.id,
       name: player.name,
       initiative: player.initiative,
       dexterity: player.dexterity,
-      type: 'player'
+      type: 'player',
+      conditions: player.conditions,
+      hasDisadvantage: hasDisadvantage(player.conditions)
     }))
   ];
   
@@ -54,6 +60,16 @@ const initiativeOrder = computed(() => {
 const hasCharacters = computed(() => {
   return initiativeOrder.value.length > 0;
 });
+
+// Fonction pour formater la liste des conditions pour l'infobulle
+function formatConditionsList(conditions: ConditionWithLevel[] | undefined) {
+  if (!conditions || conditions.length === 0) return "Aucun état";
+  
+  return conditions.map(c => {
+    const name = conditionTranslations[c.condition];
+    return c.level ? `${name} (niveau ${c.level})` : name;
+  }).join(', ');
+}
 </script>
 
 <template>
@@ -77,15 +93,41 @@ const hasCharacters = computed(() => {
       <template v-for="(character, index) in initiativeOrder" :key="`initiative-row-${index}`">
         <!-- Player column -->
         <div v-if="character.type === 'player'"
-             class="p-2 rounded-md flex justify-between items-center bg-blue-50 border border-blue-200">
+             class="p-2 rounded-md flex justify-between items-center bg-blue-50 border border-blue-200"
+             :title="formatConditionsList(character.conditions)">
           <div class="flex items-center">
             <div class="font-bold text-xl mr-3 w-6 text-center">{{ index + 1 }}</div>
-            <div>
-              <span class="font-medium">{{ character.name }}</span>
+            <div class="flex-grow">
+              <div class="flex items-center">
+                <span class="font-medium">{{ character.name }}</span>
+                <span v-if="character.hasDisadvantage" 
+                      class="ml-2 px-1.5 py-0.5 text-xs font-semibold bg-red-100 text-red-800 rounded-full" 
+                      title="Ce personnage a un désavantage aux jets d'attaque">
+                  Désavantage
+                </span>
+              </div>
               <div class="text-sm text-gray-600">
                 <span>Initiative : {{ character.initiative }}</span>
                 <span class="ml-2">DEX : {{ character.dexterity }}</span>
               </div>
+            </div>
+          </div>
+          
+          <!-- Compteur d'états -->
+          <div v-if="character.conditions && character.conditions.length > 0" 
+               class="relative flex items-center justify-center h-6 w-6 rounded-full bg-purple-100 text-purple-800 text-xs font-bold cursor-help group"
+          >
+            {{ character.conditions.length }}
+            <!-- Infobulle détaillée -->
+            <div class="absolute hidden group-hover:block right-0 bottom-full mb-2 w-48 p-2 bg-white border border-gray-200 rounded shadow-lg text-xs text-gray-700 z-50">
+              <div class="font-semibold mb-1">États actifs :</div>
+              <ul class="list-disc pl-4">
+                <li v-for="condition in character.conditions" :key="condition.condition">
+                  {{ conditionTranslations[condition.condition] }}
+                  <span v-if="condition.level">(niveau {{ condition.level }})</span>
+                </li>
+              </ul>
+              <div class="absolute right-0 bottom-0 transform translate-y-1/2 rotate-45 w-2 h-2 bg-white border-r border-b border-gray-200"></div>
             </div>
           </div>
         </div>
@@ -95,15 +137,41 @@ const hasCharacters = computed(() => {
         <div v-if="character.type === 'monster'"
              :id="`initiative-monster-${character.id}`"
              class="p-2 rounded-md flex justify-between items-center bg-red-50 border border-red-200 cursor-pointer hover:bg-red-100"
-             @click="scrollToMonster(character.id)">
+             @click="scrollToMonster(character.id)"
+             :title="formatConditionsList(character.conditions)">
           <div class="flex items-center">
             <div class="font-bold text-xl mr-3 w-6 text-center">{{ index + 1 }}</div>
-            <div>
-              <span class="font-medium">{{ character.name }}</span>
+            <div class="flex-grow">
+              <div class="flex items-center">
+                <span class="font-medium">{{ character.name }}</span>
+                <span v-if="character.hasDisadvantage" 
+                      class="ml-2 px-1.5 py-0.5 text-xs font-semibold bg-red-100 text-red-800 rounded-full" 
+                      title="Ce monstre a un désavantage aux jets d'attaque">
+                  Désavantage
+                </span>
+              </div>
               <div class="text-sm text-gray-600">
                 <span>Initiative : {{ character.initiative }}</span>
                 <span class="ml-2">DEX : {{ character.dexterity }}</span>
               </div>
+            </div>
+          </div>
+          
+          <!-- Compteur d'états -->
+          <div v-if="character.conditions && character.conditions.length > 0" 
+               class="relative flex items-center justify-center h-6 w-6 rounded-full bg-purple-100 text-purple-800 text-xs font-bold cursor-help group"
+          >
+            {{ character.conditions.length }}
+            <!-- Infobulle détaillée -->
+            <div class="absolute hidden group-hover:block right-0 bottom-full mb-2 w-48 p-2 bg-white border border-gray-200 rounded shadow-lg text-xs text-gray-700 z-50">
+              <div class="font-semibold mb-1">États actifs :</div>
+              <ul class="list-disc pl-4">
+                <li v-for="condition in character.conditions" :key="condition.condition">
+                  {{ conditionTranslations[condition.condition] }}
+                  <span v-if="condition.level">(niveau {{ condition.level }})</span>
+                </li>
+              </ul>
+              <div class="absolute right-0 bottom-0 transform translate-y-1/2 rotate-45 w-2 h-2 bg-white border-r border-b border-gray-200"></div>
             </div>
           </div>
         </div>

@@ -10,14 +10,15 @@ const monsterData = ref({
   initiative: 0,
   hp: 0,
   maxHp: 0,
-  ac: 0,
+  ac: 10,
   notes: '',
   strength: 10,
   dexterity: 10,
   constitution: 10,
   intelligence: 10,
   wisdom: 10,
-  charisma: 10
+  charisma: 10,
+  conditions: []
 });
 
 function handleSubmit() {
@@ -36,14 +37,15 @@ function resetForm() {
     initiative: 0,
     hp: 0,
     maxHp: 0,
-    ac: 0,
+    ac: 10,
     notes: '',
     strength: 10,
     dexterity: 10,
     constitution: 10,
     intelligence: 10,
     wisdom: 10,
-    charisma: 10
+    charisma: 10,
+    conditions: []
   };
 }
 </script>

@@ -9,7 +9,8 @@ const playerData = ref({
   name: '',
   initiative: 0,
   dexterity: 10,
-  notes: ''
+  notes: '',
+  conditions: []
 });
 
 function handleSubmit() {
@@ -19,7 +20,8 @@ function handleSubmit() {
       name: playerData.value.name,
       initiative: playerData.value.initiative ?? 0,
       dexterity: playerData.value.dexterity ?? 10,
-      notes: playerData.value.notes ?? ''
+      notes: playerData.value.notes ?? '',
+      conditions: playerData.value.conditions ?? []
     };
     
     playerStore.addPlayer(completePlayerData);
@@ -37,7 +39,8 @@ function resetForm() {
     name: '',
     initiative: 0,
     dexterity: 10,
-    notes: ''
+    notes: '',
+    conditions: []
   };
 }
 </script>

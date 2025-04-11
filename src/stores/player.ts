@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia';
-import { ref, watch, computed } from 'vue';
+import { ref, computed } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
+import { Condition, getExhaustionLevel } from '@/utils/conditionUtils';
+import type { ConditionWithLevel } from '@/utils/conditionUtils';
 
 export interface Player {
   id: string;
@@ -8,14 +10,12 @@ export interface Player {
   initiative: number;
   dexterity: number;
   notes?: string;
+  // Conditions/États
+  conditions: ConditionWithLevel[];
 }
 
 export const usePlayerStore = defineStore('player', () => {
-  // Load players from localStorage if available
-  const savedPlayers = localStorage.getItem('dnd-combat-tracker-players');
-  const initialPlayers = savedPlayers ? JSON.parse(savedPlayers) : [];
-  
-  const players = ref<Player[]>(initialPlayers);
+  const players = ref<Player[]>([]);
   const isAddingPlayer = ref(false);
   const editingPlayerId = ref<string | null>(null);
   
@@ -25,11 +25,6 @@ export const usePlayerStore = defineStore('player', () => {
     if (!editingPlayerId.value) return null;
     return players.value.find(player => player.id === editingPlayerId.value) || null;
   });
-  
-  // Watch for changes to players and save to localStorage
-  watch(players, (newPlayers) => {
-    localStorage.setItem('dnd-combat-tracker-players', JSON.stringify(newPlayers));
-  }, { deep: true });
 
   // Player management functions
   function addPlayer(playerData: Omit<Player, 'id'>) {
@@ -38,7 +33,8 @@ export const usePlayerStore = defineStore('player', () => {
       name: playerData.name || '',
       initiative: playerData.initiative || 0,
       dexterity: playerData.dexterity !== undefined ? playerData.dexterity : 10,
-      notes: playerData.notes || ''
+      notes: playerData.notes || '',
+      conditions: playerData.conditions || []
     };
     
     const player: Player = {
@@ -106,6 +102,87 @@ export const usePlayerStore = defineStore('player', () => {
     return mod >= 0 ? `+${mod}` : `${mod}`;
   }
 
+  // Gestion des conditions
+  function addCondition(playerId: string, condition: Condition, level?: number) {
+    const player = getPlayerById(playerId);
+    if (!player) return;
+    
+    // Vérifier si la condition existe déjà
+    const existingConditionIndex = player.conditions.findIndex(c => c.condition === condition);
+    
+    if (existingConditionIndex >= 0) {
+      // Si c'est l'épuisement, on incrémente le niveau
+      if (condition === Condition.EXHAUSTION && level) {
+        player.conditions[existingConditionIndex].level = level;
+      }
+      // Sinon, la condition existe déjà, on ne fait rien
+      return;
+    }
+    
+    // Ajouter la nouvelle condition
+    player.conditions.push({
+      condition,
+      level: condition === Condition.EXHAUSTION ? (level || 1) : undefined
+    });
+  }
+  
+  function removeCondition(playerId: string, condition: Condition) {
+    const player = getPlayerById(playerId);
+    if (!player) return;
+    
+    player.conditions = player.conditions.filter(c => c.condition !== condition);
+  }
+  
+  function updateExhaustionLevel(playerId: string, level: number) {
+    const player = getPlayerById(playerId);
+    if (!player) return;
+    
+    // Vérifier si le joueur a déjà l'épuisement
+    const exhaustionIndex = player.conditions.findIndex(c => c.condition === Condition.EXHAUSTION);
+    
+    if (level <= 0) {
+      // Supprimer l'épuisement si le niveau est 0 ou négatif
+      if (exhaustionIndex >= 0) {
+        player.conditions.splice(exhaustionIndex, 1);
+      }
+    } else if (level > 6) {
+      // Limiter à 6 maximum (mort)
+      if (exhaustionIndex >= 0) {
+        player.conditions[exhaustionIndex].level = 6;
+      } else {
+        player.conditions.push({ condition: Condition.EXHAUSTION, level: 6 });
+      }
+    } else {
+      // Mettre à jour ou ajouter l'épuisement
+      if (exhaustionIndex >= 0) {
+        player.conditions[exhaustionIndex].level = level;
+      } else {
+        player.conditions.push({ condition: Condition.EXHAUSTION, level });
+      }
+    }
+  }
+  
+  function hasCondition(playerId: string, condition: Condition): boolean {
+    const player = getPlayerById(playerId);
+    if (!player) return false;
+    
+    return player.conditions.some(c => c.condition === condition);
+  }
+  
+  function getExhaustionLevelForPlayer(playerId: string): number {
+    const player = getPlayerById(playerId);
+    if (!player) return 0;
+    
+    return getExhaustionLevel(player.conditions);
+  }
+  
+  function clearAllConditions(playerId: string) {
+    const player = getPlayerById(playerId);
+    if (!player) return;
+    
+    player.conditions = [];
+  }
+
   return {
     // State
     players,
@@ -116,20 +193,27 @@ export const usePlayerStore = defineStore('player', () => {
     isEditingAnyPlayer,
     currentEditingPlayer,
     
-    // Actions
+    // Functions
     addPlayer,
     updatePlayer,
     updatePlayerInitiative,
     removePlayer,
     reorderPlayers,
+    getPlayerById,
     startAddingPlayer,
     cancelAddingPlayer,
     startEditingPlayer,
     cancelEditingPlayer,
-    getPlayerById,
-    
-    // Utilities
     getAbilityModifier,
-    getAbilityModifierDisplay
+    getAbilityModifierDisplay,
+    
+    // Conditions
+    addCondition,
+    removeCondition,
+    updateExhaustionLevel,
+    hasCondition,
+    getExhaustionLevelForPlayer,
+    clearAllConditions
   };
-});
+},
+{ persist: true });

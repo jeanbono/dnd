@@ -1,7 +1,9 @@
 import { defineStore } from 'pinia'
-import { ref, watch, computed } from 'vue';
+import { ref, computed } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
 import { calculateAbilityModifier, getAbilityScoreDisplay } from '@/utils/abilityUtils';
+import { Condition } from '@/utils/conditionUtils';
+import type { ConditionWithLevel } from '@/utils/conditionUtils';
 
 export interface Monster {
   id: string;
@@ -19,6 +21,8 @@ export interface Monster {
   intelligence?: number;
   wisdom?: number;
   charisma?: number;
+  // Conditions/États
+  conditions: ConditionWithLevel[];
 }
 
 interface MonsterSearchResult {
@@ -58,24 +62,15 @@ interface MonsterDetailResponse {
 }
 
 export const useMonsterStore = defineStore('monsters', () => {
-  // Load monsters from localStorage if available
-  const savedMonsters = localStorage.getItem('dnd-combat-tracker-monsters');
-  const initialMonsters = savedMonsters ? JSON.parse(savedMonsters) : [];
-  
-  // Load expanded monsters from localStorage if available
-  const savedExpandedMonsters = localStorage.getItem('dnd-combat-tracker-expanded-monsters');
-  const initialExpandedMonsters = savedExpandedMonsters ? JSON.parse(savedExpandedMonsters) : [];
-  
   // State
-  const monsters = ref<Monster[]>(initialMonsters);
+  const monsters = ref<Monster[]>([]);
   const searchResults = ref<MonsterSearchResult[]>([]);
   const isSearching = ref(false);
   const searchError = ref<string | null>(null);
   const isAddingMonster = ref(false);
   const editingMonsterId = ref<string | null>(null);
   const showStatsForMonster = ref<Record<string, boolean>>({});
-  // Gérer les monstres ouverts plutôt que repliés (initialiser avec les valeurs sauvegardées)
-  const expandedMonsters = ref<Set<string>>(new Set(initialExpandedMonsters));
+  const expandedMonsters = ref<Record<string, boolean>>({});
   const rollResult = ref<{ monsterId: string, roll: number, modifier: number, total: number } | null>(null);
   
   // Computed properties
@@ -85,32 +80,24 @@ export const useMonsterStore = defineStore('monsters', () => {
     return monsters.value.find(monster => monster.id === editingMonsterId.value) || null;
   });
   
-  // Watch for changes to monsters and save to localStorage
-  watch(monsters, (newMonsters) => {
-    localStorage.setItem('dnd-combat-tracker-monsters', JSON.stringify(newMonsters));
-  }, { deep: true });
-
-  // Watch for changes to expanded monsters and save to localStorage
-  watch(expandedMonsters, (newExpandedMonsters) => {
-    localStorage.setItem('dnd-combat-tracker-expanded-monsters', JSON.stringify([...newExpandedMonsters]));
-  });
-
   // Monster management functions
   function addMonster(monsterData: Omit<Monster, 'id'>) {
     // Create default monster data
     const defaultData: Omit<Monster, 'id'> = {
       name: monsterData.name || '',
       initiative: monsterData.initiative || 0,
-      hp: monsterData.hp || 0,
-      maxHp: monsterData.maxHp || 0,
-      ac: monsterData.ac || 0,
+      hp: monsterData.hp || 10,
+      maxHp: monsterData.maxHp || 10,
+      ac: monsterData.ac || 10,
       notes: monsterData.notes || '',
       strength: monsterData.strength,
       dexterity: monsterData.dexterity,
       constitution: monsterData.constitution,
       intelligence: monsterData.intelligence,
       wisdom: monsterData.wisdom,
-      charisma: monsterData.charisma
+      charisma: monsterData.charisma,
+      apiId: monsterData.apiId,
+      conditions: monsterData.conditions || []
     };
     
     const monster: Monster = {
@@ -118,9 +105,6 @@ export const useMonsterStore = defineStore('monsters', () => {
       ...defaultData
     };
     monsters.value.push(monster);
-    
-    // Par défaut, les nouveaux monstres sont repliés (pas besoin d'ajouter à expandedMonsters)
-    
     isAddingMonster.value = false;
   }
   
@@ -129,7 +113,7 @@ export const useMonsterStore = defineStore('monsters', () => {
       monsters.value = monsters.value.filter(monster => monster.id !== id);
       
       // Nettoyer les états UI associés
-      expandedMonsters.value.delete(id);
+      delete expandedMonsters.value[id];
       delete showStatsForMonster.value[id];
       
       // If we were editing this monster, reset the editing state
@@ -159,18 +143,12 @@ export const useMonsterStore = defineStore('monsters', () => {
   
   // UI state management
   function toggleExpand(monsterId: string) {
-    if (expandedMonsters.value.has(monsterId)) {
-      expandedMonsters.value.delete(monsterId);
-    } else {
-      expandedMonsters.value.add(monsterId);
-    }
-    
-    // Sauvegarder immédiatement l'état d'expansion dans le localStorage
-    localStorage.setItem('dnd-combat-tracker-expanded-monsters', JSON.stringify([...expandedMonsters.value]));
+    // Utiliser un objet pour stocker les monstres dépliés
+    expandedMonsters.value[monsterId] = !expandedMonsters.value[monsterId];
   }
   
   function isExpanded(monsterId: string): boolean {
-    return expandedMonsters.value.has(monsterId);
+    return !!expandedMonsters.value[monsterId];
   }
   
   function toggleStats(monsterId: string) {
@@ -309,7 +287,8 @@ export const useMonsterStore = defineStore('monsters', () => {
         constitution: data.constitution,
         intelligence: data.intelligence,
         wisdom: data.wisdom,
-        charisma: data.charisma
+        charisma: data.charisma,
+        conditions: []
       };
       
       // Add the monster
@@ -351,6 +330,49 @@ export const useMonsterStore = defineStore('monsters', () => {
     return notes;
   }
 
+  // Gestion des conditions
+  function addCondition(monsterId: string, condition: Condition) {
+    const monster = getMonsterById(monsterId);
+    if (!monster) return;
+    
+    // Vérifier si la condition existe déjà
+    const existingConditionIndex = monster.conditions.findIndex(c => c.condition === condition);
+    
+    if (existingConditionIndex >= 0) {
+      // La condition existe déjà, on ne fait rien
+      return;
+    }
+    
+    // Ajouter la nouvelle condition (l'épuisement est réservé aux joueurs)
+    if (condition !== Condition.EXHAUSTION) {
+      monster.conditions.push({
+        condition,
+        level: undefined
+      });
+    }
+  }
+  
+  function removeCondition(monsterId: string, condition: Condition) {
+    const monster = getMonsterById(monsterId);
+    if (!monster) return;
+    
+    monster.conditions = monster.conditions.filter(c => c.condition !== condition);
+  }
+  
+  function hasCondition(monsterId: string, condition: Condition): boolean {
+    const monster = getMonsterById(monsterId);
+    if (!monster) return false;
+    
+    return monster.conditions.some(c => c.condition === condition);
+  }
+  
+  function clearAllConditions(monsterId: string) {
+    const monster = getMonsterById(monsterId);
+    if (!monster) return;
+    
+    monster.conditions = [];
+  }
+
   return {
     // State
     monsters,
@@ -359,7 +381,6 @@ export const useMonsterStore = defineStore('monsters', () => {
     searchError,
     isAddingMonster,
     editingMonsterId,
-    showStatsForMonster,
     expandedMonsters,
     rollResult,
     
@@ -367,7 +388,7 @@ export const useMonsterStore = defineStore('monsters', () => {
     isEditingAnyMonster,
     currentEditingMonster,
     
-    // Actions
+    // Functions
     addMonster,
     removeMonster,
     updateMonster,
@@ -389,6 +410,13 @@ export const useMonsterStore = defineStore('monsters', () => {
     searchMonsters,
     addMonsterFromApi,
     createNotesFromApiData,
-    getAbilityScoreDisplay
+    getAbilityScoreDisplay,
+    
+    // Conditions
+    addCondition,
+    removeCondition,
+    hasCondition,
+    clearAllConditions
   };
-});
+},
+{ persist: true });

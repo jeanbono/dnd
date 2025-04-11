@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { usePlayerStore } from '@/stores/player';
+import ConditionManager from '@/components/conditions/ConditionManager.vue';
 
 const props = defineProps<{
   playerId: string;
@@ -70,34 +71,50 @@ function saveChanges() {
 <template>
   <div v-if="player" class="bg-white rounded-md shadow border border-gray-200 p-4">
     <!-- View Mode -->
-    <div v-if="!isEditing" class="flex justify-between items-center">
-      <div class="flex items-center">
-        <div class="drag-handle cursor-move p-1 mr-2">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </div>
-        <div>
-          <h3 class="font-bold text-lg">{{ player.name }}</h3>
-          <div class="text-sm text-gray-500">
-            Initiative: {{ player.initiative }} | DEX: {{ player.dexterity }} ({{ dexModifier }})
+    <div v-if="!isEditing" class="flex flex-col">
+      <div class="flex justify-between items-center">
+        <div class="flex items-center">
+          <div class="drag-handle cursor-move p-1 mr-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
           </div>
+          <div>
+            <h3 class="font-bold text-lg">{{ player.name }}</h3>
+            <div class="text-sm text-gray-500">
+              Initiative: {{ player.initiative }} | DEX: {{ player.dexterity }} ({{ dexModifier }})
+            </div>
+          </div>
+        </div>
+        
+        <div class="flex items-center space-x-2">
+          <button 
+            @click="startEditing" 
+            class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm"
+          >
+            Modifier
+          </button>
+          <button 
+            @click="playerStore.removePlayer(player.id)" 
+            class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-sm"
+          >
+            Supprimer
+          </button>
         </div>
       </div>
       
-      <div class="flex items-center space-x-2">
-        <button 
-          @click="startEditing" 
-          class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm"
-        >
-          Modifier
-        </button>
-        <button 
-          @click="playerStore.removePlayer(player.id)" 
-          class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-sm"
-        >
-          Supprimer
-        </button>
+      <!-- Gestionnaire de conditions -->
+      <ConditionManager 
+        :conditions="player.conditions"
+        creature-type="player"
+        :creature-id="playerId"
+        class="mt-4"
+      />
+      
+      <!-- Notes du joueur -->
+      <div v-if="player.notes" class="mt-4">
+        <h4 class="font-semibold text-sm mb-1">Notes:</h4>
+        <p class="text-sm text-gray-700 whitespace-pre-wrap">{{ player.notes }}</p>
       </div>
     </div>
     
