@@ -2,11 +2,16 @@
 import { computed, ref } from 'vue';
 import { useMonsterStore } from '@/stores/monster';
 import { usePlayerStore } from '@/stores/player';
+import { useTurnStore } from '@/stores/turn';
+import { useDialogStore } from '@/stores/dialog';
 import { hasDisadvantage, conditionTranslations } from '@/utils/conditionUtils';
 import type { ConditionWithLevel } from '@/utils/conditionUtils';
+import NewCombatDialog from '@/components/initiative/NewCombatDialog.vue';
 
 const monsterStore = useMonsterStore();
 const playerStore = usePlayerStore();
+const turnStore = useTurnStore();
+const dialogStore = useDialogStore();
 
 // Trigger for re-computing the initiative order
 const initiativeUpdateTrigger = ref(0);
@@ -19,11 +24,20 @@ function scrollToMonster(monsterId: string) {
   }
 }
 
+// Function to advance to the next turn
+function nextTurn() {
+  // Increment the turn counter in the store
+  turnStore.nextTurn();
+  // Decrement condition durations for all creatures
+  monsterStore.decrementConditionDurations();
+  playerStore.decrementConditionDurations();
+  
+  // Trigger a re-computation of the initiative order
+  initiativeUpdateTrigger.value++;
+}
+
 // Combine monsters and players and sort by initiative
 const initiativeOrder = computed(() => {
-  // This is just to trigger a re-computation when initiative is updated
-  initiativeUpdateTrigger.value;
-  
   const combined = [
     ...monsterStore.monsters.map(monster => ({
       id: monster.id,
@@ -70,10 +84,32 @@ function formatConditionsList(conditions: ConditionWithLevel[] | undefined) {
     return c.level ? `${name} (niveau ${c.level})` : name;
   }).join(', ');
 }
+
+function startNewCombat() {
+  dialogStore.showNewCombatDialog = true;
+}
 </script>
 
 <template>
-  <h2 class="text-xl font-semibold mb-4">Ordre d'Initiative</h2>
+  <div class="flex justify-between items-center mb-4">
+    <h2 class="text-xl font-semibold">Ordre d'Initiative</h2>
+    <div class="flex items-center space-x-2">
+      <span class="text-gray-700">Tour: {{ turnStore.currentTurn }}</span>
+      <button 
+        @click="nextTurn" 
+        class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md"
+        v-if="hasCharacters"
+      >
+        Tour suivant
+      </button>
+      <button 
+        @click="startNewCombat" 
+        class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md"
+      >
+        Nouveau combat
+      </button>
+    </div>
+  </div>
   
   <div v-if="!hasCharacters" class="text-center py-6 bg-gray-100 rounded-md">
     <p class="text-gray-500">Aucun personnage dans l'ordre d'initiative pour le moment. Ajoutez des joueurs et des monstres pour commencer.</p>
@@ -179,4 +215,6 @@ function formatConditionsList(conditions: ConditionWithLevel[] | undefined) {
       </template>
     </div>
   </template>
+  
+  <NewCombatDialog />
 </template>

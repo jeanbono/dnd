@@ -39,8 +39,9 @@ function setupSortable() {
       <button 
         @click="playerStore.startAddingPlayer()" 
         class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
+        v-if="!playerStore.isAddingPlayer"
       >
-        {{ playerStore.isAddingPlayer ? 'Annuler' : 'Ajouter un Joueur' }}
+        Ajouter un Joueur
       </button>
     </div>
   </div>

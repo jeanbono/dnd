@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
 import { calculateAbilityModifier, getAbilityScoreDisplay } from '@/utils/abilityUtils';
-import { Condition } from '@/utils/conditionUtils';
+import { Condition, decrementConditionDuration } from '@/utils/conditionUtils';
 import type { ConditionWithLevel } from '@/utils/conditionUtils';
 
 export interface Monster {
@@ -331,7 +331,7 @@ export const useMonsterStore = defineStore('monsters', () => {
   }
 
   // Gestion des conditions
-  function addCondition(monsterId: string, condition: Condition) {
+  function addCondition(monsterId: string, condition: Condition, duration?: number | null) {
     const monster = getMonsterById(monsterId);
     if (!monster) return;
     
@@ -347,7 +347,8 @@ export const useMonsterStore = defineStore('monsters', () => {
     if (condition !== Condition.EXHAUSTION) {
       monster.conditions.push({
         condition,
-        level: undefined
+        level: undefined,
+        duration: duration && duration > 0 ? duration : undefined
       });
     }
   }
@@ -371,6 +372,37 @@ export const useMonsterStore = defineStore('monsters', () => {
     if (!monster) return;
     
     monster.conditions = [];
+  }
+  
+  function decrementConditionDurations() {
+    monsters.value.forEach(monster => {
+      // Créer un tableau des conditions à supprimer
+      const conditionsToRemove: Condition[] = [];
+      
+      // Vérifier chaque condition
+      monster.conditions.forEach(condition => {
+        if (decrementConditionDuration(condition)) {
+          conditionsToRemove.push(condition.condition);
+        }
+      });
+      
+      // Supprimer les conditions expirées
+      conditionsToRemove.forEach(condition => {
+        removeCondition(monster.id, condition);
+      });
+    });
+  }
+  
+  // Fonction pour supprimer tous les monstres
+  function removeAllMonsters() {
+    monsters.value = [];
+  }
+  
+  // Fonction pour supprimer toutes les conditions de tous les monstres
+  function clearAllMonstersConditions() {
+    monsters.value.forEach(monster => {
+      monster.conditions = [];
+    });
   }
 
   return {
@@ -416,7 +448,10 @@ export const useMonsterStore = defineStore('monsters', () => {
     addCondition,
     removeCondition,
     hasCondition,
-    clearAllConditions
+    clearAllConditions,
+    decrementConditionDurations,
+    removeAllMonsters,
+    clearAllMonstersConditions
   };
 },
 { persist: true });

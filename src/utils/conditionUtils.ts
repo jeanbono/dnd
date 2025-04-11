@@ -29,6 +29,7 @@ export enum Condition {
 export interface ConditionWithLevel {
   condition: Condition;
   level?: number; // Utilisé principalement pour l'épuisement
+  duration?: number; // Durée en nombre de tours (optionnel)
 }
 
 /**
@@ -139,4 +140,24 @@ export function hasDisadvantage(conditions: ConditionWithLevel[]): boolean {
   const hasExhaustionDisadvantage = exhaustion?.level !== undefined && exhaustion.level >= 3;
   
   return hasDisadvantageCondition || hasExhaustionDisadvantage;
+}
+
+/**
+ * Décrémente la durée d'une condition et retourne true si la condition doit être supprimée
+ */
+export function decrementConditionDuration(condition: ConditionWithLevel): boolean {
+  // L'épuisement n'a pas de durée
+  if (condition.condition === Condition.EXHAUSTION) {
+    return false;
+  }
+  
+  // Si la condition a une durée définie
+  if (condition.duration !== undefined) {
+    condition.duration -= 1;
+    // Retourne true si la durée est arrivée à 0 (condition à supprimer)
+    return condition.duration <= 0;
+  }
+  
+  // Si la condition n'a pas de durée définie, elle est permanente
+  return false;
 }

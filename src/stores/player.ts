@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
-import { Condition, getExhaustionLevel } from '@/utils/conditionUtils';
+import { Condition, getExhaustionLevel, decrementConditionDuration } from '@/utils/conditionUtils';
 import type { ConditionWithLevel } from '@/utils/conditionUtils';
 
 export interface Player {
@@ -103,7 +103,7 @@ export const usePlayerStore = defineStore('player', () => {
   }
 
   // Gestion des conditions
-  function addCondition(playerId: string, condition: Condition, level?: number) {
+  function addCondition(playerId: string, condition: Condition, duration?: number | null, level?: number) {
     const player = getPlayerById(playerId);
     if (!player) return;
     
@@ -122,7 +122,8 @@ export const usePlayerStore = defineStore('player', () => {
     // Ajouter la nouvelle condition
     player.conditions.push({
       condition,
-      level: condition === Condition.EXHAUSTION ? (level || 1) : undefined
+      level: condition === Condition.EXHAUSTION ? (level || 1) : undefined,
+      duration: condition !== Condition.EXHAUSTION && duration && duration > 0 ? duration : undefined
     });
   }
   
@@ -183,6 +184,31 @@ export const usePlayerStore = defineStore('player', () => {
     player.conditions = [];
   }
 
+  function decrementConditionDurations() {
+    players.value.forEach(player => {
+      // Créer un tableau des conditions à supprimer
+      const conditionsToRemove: Condition[] = [];
+      
+      // Vérifier chaque condition
+      player.conditions.forEach(condition => {
+        if (decrementConditionDuration(condition)) {
+          conditionsToRemove.push(condition.condition);
+        }
+      });
+      
+      // Supprimer les conditions expirées
+      conditionsToRemove.forEach(condition => {
+        removeCondition(player.id, condition);
+      });
+    });
+  }
+
+  function clearAllPlayersConditions() {
+    players.value.forEach(player => {
+      player.conditions = [];
+    });
+  }
+
   return {
     // State
     players,
@@ -213,7 +239,9 @@ export const usePlayerStore = defineStore('player', () => {
     updateExhaustionLevel,
     hasCondition,
     getExhaustionLevelForPlayer,
-    clearAllConditions
+    clearAllConditions,
+    clearAllPlayersConditions,
+    decrementConditionDurations
   };
 },
 { persist: true });

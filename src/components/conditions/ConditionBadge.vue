@@ -1,16 +1,28 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { Condition, conditionDescriptions, exhaustionLevelDescriptions, conditionTranslations } from '@/utils/conditionUtils';
+import { useMonsterStore } from '@/stores/monster';
+import { usePlayerStore } from '@/stores/player';
 
 const props = defineProps<{
   condition: Condition;
   level?: number;
+  duration?: number;
+  creatureId: string;
+  creatureType: 'monster' | 'player';
 }>();
 
-// Émets un événement lorsque l'utilisateur clique sur le badge pour le supprimer
-const emit = defineEmits<{
-  (e: 'remove'): void;
-}>();
+const monsterStore = useMonsterStore();
+const playerStore = usePlayerStore();
+
+// Fonction pour supprimer la condition
+function removeCondition() {
+  if (props.creatureType === 'monster') {
+    monsterStore.removeCondition(props.creatureId, props.condition);
+  } else {
+    playerStore.removeCondition(props.creatureId, props.condition);
+  }
+}
 
 // Détermine la couleur du badge en fonction de la condition
 const badgeColor = computed(() => {
@@ -73,9 +85,10 @@ const tooltipDescription = computed(() => {
   <div 
     :class="[badgeColor, 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-white mr-2 mb-1 cursor-pointer hover:opacity-90']"
     :title="tooltipDescription"
-    @click="emit('remove')"
+    @click="removeCondition"
   >
     {{ conditionName }}
+    {{ props.duration ? ` (${props.duration} tours)` : '' }}
     <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 ml-1" viewBox="0 0 20 20" fill="currentColor">
       <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
     </svg>

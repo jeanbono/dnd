@@ -48,8 +48,9 @@ function rollAllInitiatives() {
       <button 
         @click="monsterStore.toggleAddingMonster()" 
         class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
+        v-if="!monsterStore.isAddingMonster"
       >
-        {{ monsterStore.isAddingMonster ? 'Annuler' : 'Ajouter un Monstre' }}
+        Ajouter un Monstre
       </button>
       <button 
         @click="showMonsterSearch = !showMonsterSearch" 
