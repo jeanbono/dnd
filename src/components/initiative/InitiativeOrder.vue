@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed } from 'vue';
 import { useMonsterStore } from '@/stores/monster';
 import { usePlayerStore } from '@/stores/player';
 import { useTurnStore } from '@/stores/turn';
@@ -12,9 +12,6 @@ const monsterStore = useMonsterStore();
 const playerStore = usePlayerStore();
 const turnStore = useTurnStore();
 const dialogStore = useDialogStore();
-
-// Trigger for re-computing the initiative order
-const initiativeUpdateTrigger = ref(0);
 
 // Function to scroll to a monster in the monster list
 function scrollToMonster(monsterId: string) {
@@ -31,15 +28,17 @@ function nextTurn() {
   // Decrement condition durations for all creatures
   monsterStore.decrementConditionDurations();
   playerStore.decrementConditionDurations();
-  
-  // Trigger a re-computation of the initiative order
-  initiativeUpdateTrigger.value++;
 }
+
+// Computed properties for reactive data sources
+const monsters = computed(() => monsterStore.monsters);
+const players = computed(() => playerStore.players);
+const currentTurn = computed(() => turnStore.currentTurn);
 
 // Combine monsters and players and sort by initiative
 const initiativeOrder = computed(() => {
   const combined = [
-    ...monsterStore.monsters.map(monster => ({
+    ...monsters.value.map(monster => ({
       id: monster.id,
       name: monster.name,
       initiative: monster.initiative,
@@ -48,7 +47,7 @@ const initiativeOrder = computed(() => {
       conditions: monster.conditions,
       hasDisadvantage: hasDisadvantage(monster.conditions)
     })),
-    ...playerStore.players.map(player => ({
+    ...players.value.map(player => ({
       id: player.id,
       name: player.name,
       initiative: player.initiative,
@@ -94,7 +93,7 @@ function startNewCombat() {
   <div class="flex justify-between items-center mb-4">
     <h2 class="text-xl font-semibold">Ordre d'Initiative</h2>
     <div class="flex items-center space-x-2">
-      <span class="text-gray-700">Tour: {{ turnStore.currentTurn }}</span>
+      <span class="text-gray-700">Tour: {{ currentTurn }}</span>
       <button 
         @click="nextTurn" 
         class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md"
