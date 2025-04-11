@@ -1,38 +1,74 @@
 <script setup lang="ts">
-import { defineProps, computed } from 'vue';
-import { type Player, usePlayerStore } from '../../stores/player';
+import { computed, ref, watch } from 'vue';
+import { usePlayerStore } from '../../stores/player';
 
 const props = defineProps<{
-  player: Player;
+  playerId: string;
 }>();
 
 const playerStore = usePlayerStore();
+const player = computed(() => playerStore.getPlayerById(props.playerId));
 
 // Computed properties
-const isEditing = computed(() => playerStore.editingPlayerId === props.player.id);
-const editedPlayer = computed(() => playerStore.tempPlayerData);
+const isEditing = computed(() => playerStore.editingPlayerId === props.playerId);
+
+// Données d'édition gérées localement
+const editedPlayer = ref({
+  name: '',
+  initiative: 0,
+  dexterity: 10,
+  notes: ''
+});
+
+// Mettre à jour les données d'édition quand le joueur change
+watch(() => player.value, (newPlayer) => {
+  if (newPlayer && !isEditing.value) {
+    editedPlayer.value = {
+      name: newPlayer.name,
+      initiative: newPlayer.initiative,
+      dexterity: newPlayer.dexterity,
+      notes: newPlayer.notes || ''
+    };
+  }
+}, { deep: true, immediate: true });
+
+// Réinitialiser les données d'édition quand on entre en mode édition
+watch(isEditing, (editing) => {
+  if (editing && player.value) {
+    editedPlayer.value = {
+      name: player.value.name,
+      initiative: player.value.initiative,
+      dexterity: player.value.dexterity,
+      notes: player.value.notes || ''
+    };
+  }
+});
 
 const dexModifier = computed(() => {
-  const dex = isEditing.value ? editedPlayer.value.dexterity || props.player.dexterity : props.player.dexterity;
+  if (!player.value) return '';
+  const dex = isEditing.value ? editedPlayer.value.dexterity : player.value.dexterity;
   return playerStore.getAbilityModifierDisplay(dex);
 });
 
 // Actions
 function startEditing() {
-  playerStore.startEditingPlayer(props.player.id);
+  playerStore.startEditingPlayer(props.playerId);
 }
 
 function cancelEditing() {
-  playerStore.cancelEditing();
+  playerStore.cancelEditingPlayer();
 }
 
 function saveChanges() {
-  playerStore.saveEditedPlayer();
+  if (playerStore.editingPlayerId === props.playerId) {
+    playerStore.updatePlayer(props.playerId, editedPlayer.value);
+    playerStore.cancelEditingPlayer();
+  }
 }
 </script>
 
 <template>
-  <div class="bg-white rounded-md shadow border border-gray-200 p-4">
+  <div v-if="player" class="bg-white rounded-md shadow border border-gray-200 p-4">
     <!-- View Mode -->
     <div v-if="!isEditing" class="flex justify-between items-center">
       <div class="flex items-center">
@@ -42,9 +78,9 @@ function saveChanges() {
           </svg>
         </div>
         <div>
-          <h3 class="font-bold text-lg">{{ props.player.name }}</h3>
+          <h3 class="font-bold text-lg">{{ player.name }}</h3>
           <div class="text-sm text-gray-500">
-            Initiative: {{ props.player.initiative }} | DEX: {{ props.player.dexterity }} ({{ dexModifier }})
+            Initiative: {{ player.initiative }} | DEX: {{ player.dexterity }} ({{ dexModifier }})
           </div>
         </div>
       </div>
@@ -57,7 +93,7 @@ function saveChanges() {
           Modifier
         </button>
         <button 
-          @click="playerStore.removePlayer(props.player.id)" 
+          @click="playerStore.removePlayer(player.id)" 
           class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-sm"
         >
           Supprimer
@@ -101,6 +137,15 @@ function saveChanges() {
             class="w-full p-2 border border-gray-300 rounded-md"
           >
         </div>
+      </div>
+      
+      <div class="mt-2 mb-3">
+        <label class="block text-sm font-medium mb-1">Notes</label>
+        <textarea 
+          v-model="editedPlayer.notes" 
+          rows="2"
+          class="w-full p-2 border border-gray-300 rounded-md"
+        ></textarea>
       </div>
       
       <div class="flex justify-end space-x-2">

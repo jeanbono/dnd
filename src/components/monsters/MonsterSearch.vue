@@ -34,14 +34,12 @@ async function performSearch() {
 // Add a monster from the API
 async function addMonster(url: string) {
   isLoading.value = true;
-  const success = await store.addMonsterFromApi(url);
+  await store.addMonsterFromApi(url);
   isLoading.value = false;
   
-  if (success) {
-    // Clear search results after adding
-    searchQuery.value = '';
-    store.searchResults = [];
-  }
+  // Clear search results after adding
+  searchQuery.value = '';
+  store.searchResults = [];
 }
 
 // Watch for changes to the search query

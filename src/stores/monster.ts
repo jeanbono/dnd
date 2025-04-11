@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, watch, computed } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
+import { calculateAbilityModifier, getAbilityScoreDisplay } from '../utils/abilityUtils';
 
 export interface Monster {
   id: string;
@@ -61,6 +62,10 @@ export const useMonsterStore = defineStore('monsters', () => {
   const savedMonsters = localStorage.getItem('dnd-combat-tracker-monsters');
   const initialMonsters = savedMonsters ? JSON.parse(savedMonsters) : [];
   
+  // Load expanded monsters from localStorage if available
+  const savedExpandedMonsters = localStorage.getItem('dnd-combat-tracker-expanded-monsters');
+  const initialExpandedMonsters = savedExpandedMonsters ? JSON.parse(savedExpandedMonsters) : [];
+  
   // State
   const monsters = ref<Monster[]>(initialMonsters);
   const searchResults = ref<MonsterSearchResult[]>([]);
@@ -69,23 +74,9 @@ export const useMonsterStore = defineStore('monsters', () => {
   const isAddingMonster = ref(false);
   const editingMonsterId = ref<string | null>(null);
   const showStatsForMonster = ref<Record<string, boolean>>({});
-  const collapsedMonsters = ref<Set<string>>(new Set());
+  // Gérer les monstres ouverts plutôt que repliés (initialiser avec les valeurs sauvegardées)
+  const expandedMonsters = ref<Set<string>>(new Set(initialExpandedMonsters));
   const rollResult = ref<{ monsterId: string, roll: number, modifier: number, total: number } | null>(null);
-  
-  const tempMonsterData = ref<Partial<Monster>>({
-    name: '',
-    initiative: 0,
-    hp: 0,
-    maxHp: 0,
-    ac: 0,
-    notes: '',
-    strength: 10,
-    dexterity: 10,
-    constitution: 10,
-    intelligence: 10,
-    wisdom: 10,
-    charisma: 10
-  });
   
   // Computed properties
   const isEditingAnyMonster = computed(() => editingMonsterId.value !== null);
@@ -99,61 +90,66 @@ export const useMonsterStore = defineStore('monsters', () => {
     localStorage.setItem('dnd-combat-tracker-monsters', JSON.stringify(newMonsters));
   }, { deep: true });
 
+  // Watch for changes to expanded monsters and save to localStorage
+  watch(expandedMonsters, (newExpandedMonsters) => {
+    localStorage.setItem('dnd-combat-tracker-expanded-monsters', JSON.stringify([...newExpandedMonsters]));
+  });
+
   // Monster management functions
   function addMonster(monsterData: Omit<Monster, 'id'>) {
-    // Create default monster data with ability scores set to 10
-    const defaultData: Partial<Monster> = {
+    // Create default monster data
+    const defaultData: Omit<Monster, 'id'> = {
       name: monsterData.name || '',
       initiative: monsterData.initiative || 0,
       hp: monsterData.hp || 0,
       maxHp: monsterData.maxHp || 0,
       ac: monsterData.ac || 0,
       notes: monsterData.notes || '',
-      strength: monsterData.strength !== undefined ? monsterData.strength : 10,
-      dexterity: monsterData.dexterity !== undefined ? monsterData.dexterity : 10,
-      constitution: monsterData.constitution !== undefined ? monsterData.constitution : 10,
-      intelligence: monsterData.intelligence !== undefined ? monsterData.intelligence : 10,
-      wisdom: monsterData.wisdom !== undefined ? monsterData.wisdom : 10,
-      charisma: monsterData.charisma !== undefined ? monsterData.charisma : 10,
-      apiId: monsterData.apiId
+      strength: monsterData.strength,
+      dexterity: monsterData.dexterity,
+      constitution: monsterData.constitution,
+      intelligence: monsterData.intelligence,
+      wisdom: monsterData.wisdom,
+      charisma: monsterData.charisma
     };
     
     const monster: Monster = {
       id: uuidv4(),
-      ...defaultData as Omit<Monster, 'id'>
+      ...defaultData
     };
     monsters.value.push(monster);
-    resetForm();
+    
+    // Par défaut, les nouveaux monstres sont repliés (pas besoin d'ajouter à expandedMonsters)
+    
+    isAddingMonster.value = false;
   }
   
   function removeMonster(id: string) {
     if (confirm('Êtes-vous sûr de vouloir supprimer ce monstre ?')) {
       monsters.value = monsters.value.filter(monster => monster.id !== id);
       
-      // If we were editing this monster, reset the form
+      // Nettoyer les états UI associés
+      expandedMonsters.value.delete(id);
+      delete showStatsForMonster.value[id];
+      
+      // If we were editing this monster, reset the editing state
       if (editingMonsterId.value === id) {
-        resetForm();
+        editingMonsterId.value = null;
       }
     }
   }
   
   function updateMonster(id: string, updates: Partial<Monster>) {
-    const monster = monsters.value.find(m => m.id === id);
-    if (monster) {
-      Object.assign(monster, updates);
-      
-      // If we're updating the monster we're currently editing, also update the temp data
-      if (editingMonsterId.value === id) {
-        Object.assign(tempMonsterData.value, updates);
-      }
+    const index = monsters.value.findIndex(monster => monster.id === id);
+    if (index !== -1) {
+      monsters.value[index] = { ...monsters.value[index], ...updates };
     }
   }
   
   function updateMonsterHp(id: string, change: number) {
     const monster = monsters.value.find(m => m.id === id);
     if (monster) {
-      const newHp = Math.max(0, Math.min(monster.maxHp, monster.hp + change));
-      updateMonster(id, { hp: newHp });
+      monster.hp = Math.max(0, Math.min(monster.maxHp, monster.hp + change));
     }
   }
   
@@ -162,16 +158,19 @@ export const useMonsterStore = defineStore('monsters', () => {
   }
   
   // UI state management
-  function toggleCollapse(monsterId: string) {
-    if (collapsedMonsters.value.has(monsterId)) {
-      collapsedMonsters.value.delete(monsterId);
+  function toggleExpand(monsterId: string) {
+    if (expandedMonsters.value.has(monsterId)) {
+      expandedMonsters.value.delete(monsterId);
     } else {
-      collapsedMonsters.value.add(monsterId);
+      expandedMonsters.value.add(monsterId);
     }
+    
+    // Sauvegarder immédiatement l'état d'expansion dans le localStorage
+    localStorage.setItem('dnd-combat-tracker-expanded-monsters', JSON.stringify([...expandedMonsters.value]));
   }
   
-  function isCollapsed(monsterId: string): boolean {
-    return collapsedMonsters.value.has(monsterId);
+  function isExpanded(monsterId: string): boolean {
+    return expandedMonsters.value.has(monsterId);
   }
   
   function toggleStats(monsterId: string) {
@@ -184,91 +183,52 @@ export const useMonsterStore = defineStore('monsters', () => {
   
   // Editing functions
   function startAddingMonster() {
-    resetForm();
     isAddingMonster.value = true;
   }
   
-  function startEditingMonster(id: string) {
-    const monster = monsters.value.find(m => m.id === id);
-    if (monster) {
-      editingMonsterId.value = id;
-      tempMonsterData.value = { ...monster };
-    }
-  }
-  
-  function cancelEditing() {
-    resetForm();
-  }
-  
-  function saveEditedMonster() {
-    if (editingMonsterId.value) {
-      updateMonster(editingMonsterId.value, tempMonsterData.value);
-      resetForm();
-    }
-  }
-  
-  function resetForm() {
+  function cancelAddingMonster() {
     isAddingMonster.value = false;
-    editingMonsterId.value = null;
-    tempMonsterData.value = {
-      name: '',
-      initiative: 0,
-      hp: 0,
-      maxHp: 0,
-      ac: 0,
-      notes: '',
-      strength: 10,
-      dexterity: 10,
-      constitution: 10,
-      intelligence: 10,
-      wisdom: 10,
-      charisma: 10
-    };
-  }
-
-  // Calculate ability score modifier according to D&D 5e rules
-  function calculateAbilityModifier(score: number): number {
-    return Math.floor((score - 10) / 2);
   }
   
-  // Get formatted ability score display
-  function getAbilityScoreDisplay(score?: number): string {
-    if (!score) return '— (±0)';
-    const modifier = calculateAbilityModifier(score);
-    const sign = modifier >= 0 ? '+' : '';
-    return `${score} (${sign}${modifier})`;
+  function startEditingMonster(id: string) {
+    editingMonsterId.value = id;
+  }
+  
+  function cancelEditingMonster() {
+    editingMonsterId.value = null;
   }
   
   // Roll initiative for a monster based on its dexterity
   function rollInitiative(id: string) {
     const monster = monsters.value.find(m => m.id === id);
-    if (monster) {
-      // Roll d20
-      const d20Roll = Math.floor(Math.random() * 20) + 1;
-      
-      // Calculate dexterity modifier
-      const dexMod = monster.dexterity ? calculateAbilityModifier(monster.dexterity) : 0;
-      
-      // Set initiative to d20 roll + dex modifier
-      const initiative = d20Roll + dexMod;
-      updateMonster(id, { initiative });
-      
-      // Set roll result for animation
-      rollResult.value = {
-        monsterId: id,
-        roll: d20Roll,
-        modifier: dexMod,
-        total: initiative
-      };
-      
-      // Clear the roll result after 3 seconds
-      setTimeout(() => {
+    if (!monster) return;
+    
+    // Get dexterity modifier
+    const dexMod = monster.dexterity ? calculateAbilityModifier(monster.dexterity) : 0;
+    
+    // Roll d20
+    const roll = Math.floor(Math.random() * 20) + 1;
+    
+    // Calculate total
+    const total = roll + dexMod;
+    
+    // Update monster initiative
+    updateMonster(id, { initiative: total });
+    
+    // Store roll result for display
+    rollResult.value = {
+      monsterId: id,
+      roll,
+      modifier: dexMod,
+      total
+    };
+    
+    // Clear roll result after 3 seconds
+    setTimeout(() => {
+      if (rollResult.value?.monsterId === id) {
         rollResult.value = null;
-      }, 3000);
-      
-      return { roll: d20Roll, modifier: dexMod, total: initiative };
-    }
-    return null;
+      }
+    }, 3000);
   }
   
   function rollAllInitiatives() {
@@ -276,32 +236,25 @@ export const useMonsterStore = defineStore('monsters', () => {
       rollInitiative(monster.id);
     });
   }
-
+  
   function toggleAddingMonster() {
     isAddingMonster.value = !isAddingMonster.value;
-    if (isAddingMonster.value) {
-      // Réinitialiser les données temporaires lorsqu'on active le mode ajout
-      resetForm();
+    if (!isAddingMonster.value) {
+      // Si on ferme le formulaire d'ajout, réinitialiser l'état d'édition
+      editingMonsterId.value = null;
     }
   }
-
+  
   function addMonsterFromTemp() {
-    const monsterData = tempMonsterData.value;
-    
-    if (monsterData.name && monsterData.hp !== undefined && monsterData.maxHp !== undefined) {
-      addMonster(monsterData as Omit<Monster, 'id'>);
-      resetForm();
-    }
+    // Cette fonction n'est plus nécessaire car nous n'utilisons plus tempMonsterData
+    // Elle est conservée pour compatibilité mais devrait être remplacée par addMonster
+    console.warn('addMonsterFromTemp is deprecated, use addMonster instead');
   }
-
+  
   function getMonsterById(id: string): Monster | undefined {
-    return monsters.value.find(m => m.id === id);
+    return monsters.value.find(monster => monster.id === id);
   }
-
-  function getAbilityModifier(score: number): number {
-    return calculateAbilityModifier(score);
-  }
-
+  
   async function searchMonsters(name: string) {
     if (!name.trim()) {
       searchResults.value = [];
@@ -312,17 +265,15 @@ export const useMonsterStore = defineStore('monsters', () => {
     searchError.value = null;
     
     try {
-      const response = await fetch(`https://www.dnd5eapi.co/api/2014/monsters?name=${encodeURIComponent(name)}`);
-      
+      const response = await fetch(`https://www.dnd5eapi.co/api/monsters/?name=${encodeURIComponent(name)}`);
       if (!response.ok) {
-        throw new Error(`API request failed with status ${response.status}`);
+        throw new Error('Failed to fetch monsters');
       }
       
       const data: MonsterSearchResponse = await response.json();
       searchResults.value = data.results;
     } catch (error) {
-      console.error('Error searching monsters:', error);
-      searchError.value = error instanceof Error ? error.message : 'Unknown error occurred';
+      searchError.value = error instanceof Error ? error.message : 'An unknown error occurred';
       searchResults.value = [];
     } finally {
       isSearching.value = false;
@@ -330,43 +281,28 @@ export const useMonsterStore = defineStore('monsters', () => {
   }
   
   async function addMonsterFromApi(url: string) {
+    isSearching.value = true;
+    searchError.value = null;
+    
     try {
       const response = await fetch(`https://www.dnd5eapi.co${url}`);
-      
       if (!response.ok) {
-        throw new Error(`API request failed with status ${response.status}`);
+        throw new Error('Failed to fetch monster details');
       }
       
       const data: MonsterDetailResponse = await response.json();
       
-      // Extract AC (armor class) from the response
-      const ac = data.armor_class && data.armor_class.length > 0 
-        ? data.armor_class[0].value 
-        : 10;
+      // Extract armor class - use the first one if multiple are available
+      const ac = data.armor_class.length > 0 ? data.armor_class[0].value : 10;
       
-      // Extract special abilities and actions as notes
-      const specialAbilities = data.special_abilities 
-        ? data.special_abilities.map(ability => `${ability.name}: ${ability.desc}`).join('\n\n') 
-        : '';
-        
-      const actions = data.actions 
-        ? data.actions.map(action => `${action.name}: ${action.desc}`).join('\n\n') 
-        : '';
-        
-      const notes = [
-        `Challenge Rating: ${data.challenge_rating}`,
-        specialAbilities ? `Special Abilities:\n${specialAbilities}` : '',
-        actions ? `Actions:\n${actions}` : ''
-      ].filter(Boolean).join('\n\n');
-      
-      // Add the monster to the store
-      const newMonster = {
+      // Create a new monster from the API data
+      const monster: Omit<Monster, 'id'> = {
         name: data.name,
-        initiative: 0, // Will be rolled separately
+        initiative: 0, // Will be rolled later
         hp: data.hit_points,
         maxHp: data.hit_points,
         ac,
-        notes,
+        notes: createNotesFromApiData(data),
         apiId: data.index,
         strength: data.strength,
         dexterity: data.dexterity,
@@ -376,17 +312,43 @@ export const useMonsterStore = defineStore('monsters', () => {
         charisma: data.charisma
       };
       
-      addMonster(newMonster);
+      // Add the monster
+      addMonster(monster);
       
-      // Roll initiative for the newly added monster
-      const monsterId = monsters.value[monsters.value.length - 1].id;
-      rollInitiative(monsterId);
+      // Automatically roll initiative for the new monster
+      const newMonster = monsters.value.find(m => m.name === data.name && m.apiId === data.index);
+      if (newMonster) {
+        rollInitiative(newMonster.id);
+      }
       
-      return true;
+      // Clear search results
+      searchResults.value = [];
     } catch (error) {
-      console.error('Error adding monster from API:', error);
-      return false;
+      searchError.value = error instanceof Error ? error.message : 'An unknown error occurred';
+    } finally {
+      isSearching.value = false;
     }
+  }
+  
+  function createNotesFromApiData(data: MonsterDetailResponse): string {
+    let notes = `Challenge Rating: ${data.challenge_rating}\n\n`;
+    
+    if (data.special_abilities && data.special_abilities.length > 0) {
+      notes += "Special Abilities:\n";
+      data.special_abilities.forEach(ability => {
+        notes += `- ${ability.name}: ${ability.desc}\n`;
+      });
+      notes += "\n";
+    }
+    
+    if (data.actions && data.actions.length > 0) {
+      notes += "Actions:\n";
+      data.actions.forEach(action => {
+        notes += `- ${action.name}: ${action.desc}\n`;
+      });
+    }
+    
+    return notes;
   }
 
   return {
@@ -398,48 +360,35 @@ export const useMonsterStore = defineStore('monsters', () => {
     isAddingMonster,
     editingMonsterId,
     showStatsForMonster,
-    collapsedMonsters,
+    expandedMonsters,
     rollResult,
-    tempMonsterData,
     
     // Computed
     isEditingAnyMonster,
     currentEditingMonster,
     
-    // Monster management
+    // Actions
     addMonster,
     removeMonster,
     updateMonster,
     updateMonsterHp,
     reorderMonsters,
-    
-    // UI state management
-    toggleCollapse,
-    isCollapsed,
+    toggleExpand,
+    isExpanded,
     toggleStats,
     isStatsShown,
-    
-    // Editing
     startAddingMonster,
+    cancelAddingMonster,
     startEditingMonster,
-    cancelEditing,
-    saveEditedMonster,
-    resetForm,
-    
-    // Abilities and initiative
-    calculateAbilityModifier,
-    getAbilityScoreDisplay,
+    cancelEditingMonster,
     rollInitiative,
     rollAllInitiatives,
-    
-    // API
-    searchMonsters,
-    addMonsterFromApi,
-    
-    // Additional functions
     toggleAddingMonster,
     addMonsterFromTemp,
     getMonsterById,
-    getAbilityModifier
+    searchMonsters,
+    addMonsterFromApi,
+    createNotesFromApiData,
+    getAbilityScoreDisplay
   };
 });

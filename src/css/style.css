@@ -1,2 +1,6 @@
 @import "tailwindcss";
 
+/* Styles globaux pour toute l'application */
+button {
+  cursor: pointer;
+}

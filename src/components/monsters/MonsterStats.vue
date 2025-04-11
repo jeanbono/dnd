@@ -1,25 +1,18 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useMonsterStore } from '../../stores/monster';
+import { getAbilityScoreDisplay } from '../../utils/abilityUtils';
 
 const props = defineProps<{
   monsterId: string;
 }>();
 
 const monsterStore = useMonsterStore();
-const monster = computed(() => monsterStore.getMonsterById(props.monsterId)!);
-
-// Utiliser la fonction du store pour calculer les modificateurs
-function getAbilityScoreDisplay(score?: number): string {
-  if (!score) return '— (±0)';
-  const modifier = monsterStore.getAbilityModifier(score);
-  const sign = modifier >= 0 ? '+' : '';
-  return `${score} (${sign}${modifier})`;
-}
+const monster = computed(() => monsterStore.getMonsterById(props.monsterId));
 </script>
 
 <template>
-  <div class="p-3">
+  <div class="p-3" v-if="monster">
     <!-- Version mobile: 3 colonnes -->
     <div class="grid grid-cols-3 gap-4 md:hidden">
       <div class="text-center">

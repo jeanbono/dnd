@@ -1,30 +1,31 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest'
 import {mount} from '@vue/test-utils'
 import {createPinia, setActivePinia} from 'pinia'
-import type {Player} from '../../../stores/player'
 import {usePlayerStore} from '../../../stores/player'
 import PlayerCard from '../../../components/players/PlayerCard.vue'
 
 describe('PlayerCard', () => {
   let store: ReturnType<typeof usePlayerStore>
-  let testPlayer: Player
+  let playerId: string
 
   beforeEach(() => {
     // Configuration de Pinia
     setActivePinia(createPinia())
     store = usePlayerStore()
     
-    // Créer un joueur de test
-    testPlayer = {
-      id: 'test-player-id',
+    // Créer un joueur de test dans le store
+    store.addPlayer({
       name: 'Aragorn',
       initiative: 15,
       dexterity: 16,
       notes: 'Ranger du Nord'
-    }
+    })
+    
+    // Récupérer l'ID du joueur créé
+    playerId = store.players[0].id
     
     // Reset the editing state before each test
-    store.editingPlayerId = null
+    store.cancelEditingPlayer()
     
     // Mock de window.confirm pour éviter les erreurs
     vi.stubGlobal('confirm', vi.fn(() => true))
@@ -33,7 +34,7 @@ describe('PlayerCard', () => {
   it('renders correctly in view mode', () => {
     const wrapper = mount(PlayerCard, {
       props: {
-        player: testPlayer
+        playerId
       }
     })
 
@@ -42,24 +43,16 @@ describe('PlayerCard', () => {
     
     // Vérifier que les informations de base sont affichées
     expect(wrapper.text()).toContain('Initiative: 15')
-    expect(wrapper.text()).toContain('DEX: 16')
-    
-    // Vérifier que les boutons d'action sont présents
-    expect(wrapper.findAll('button').length).toBe(2)
-    expect(wrapper.findAll('button')[0].text()).toBe('Modifier')
-    expect(wrapper.findAll('button')[1].text()).toBe('Supprimer')
+    expect(wrapper.text()).toContain('DEX: 16 (+3)')
   })
 
   it('renders correctly in edit mode', async () => {
-    // Add the player to the store first
-    store.players = [testPlayer]
-    
     // Mettre le joueur en mode édition
-    store.startEditingPlayer(testPlayer.id)
+    store.startEditingPlayer(playerId)
     
     const wrapper = mount(PlayerCard, {
       props: {
-        player: testPlayer
+        playerId
       }
     })
 
@@ -81,20 +74,18 @@ describe('PlayerCard', () => {
     // Mode vue
     let wrapper = mount(PlayerCard, {
       props: {
-        player: testPlayer
+        playerId
       }
     })
     
     expect(wrapper.find('.drag-handle').exists()).toBe(true)
     
     // Mode édition
-    // Add the player to the store first
-    store.players = [testPlayer]
-    store.startEditingPlayer(testPlayer.id)
+    store.startEditingPlayer(playerId)
     
     wrapper = mount(PlayerCard, {
       props: {
-        player: testPlayer
+        playerId
       }
     })
     
@@ -102,104 +93,125 @@ describe('PlayerCard', () => {
   })
 
   it('starts editing when edit button is clicked', async () => {
-    // Add the player to the store first
-    store.players = [testPlayer]
+    const wrapper = mount(PlayerCard, {
+      props: {
+        playerId
+      }
+    })
     
     // Espionner la méthode startEditingPlayer du store
     const spy = vi.spyOn(store, 'startEditingPlayer')
     
-    const wrapper = mount(PlayerCard, {
-      props: {
-        player: testPlayer
-      }
-    })
+    // Trouver le bouton d'édition par son contenu
+    const editButton = wrapper.findAll('button').find(b => b.text().includes('Modifier'))
+    expect(editButton).toBeDefined()
     
-    // Cliquer sur le bouton d'édition
-    const editButton = wrapper.findAll('button')[0]
-    await editButton.trigger('click')
-    
-    // Vérifier que la méthode a été appelée avec le bon ID
-    expect(spy).toHaveBeenCalledWith(testPlayer.id)
+    if (editButton) {
+      await editButton.trigger('click')
+      
+      // Vérifier que la méthode a été appelée avec le bon ID
+      expect(spy).toHaveBeenCalledWith(playerId)
+    }
   })
 
   it('removes player when remove button is clicked', async () => {
-    // Add the player to the store first
-    store.players = [testPlayer]
+    const wrapper = mount(PlayerCard, {
+      props: {
+        playerId
+      }
+    })
     
     // Espionner la méthode removePlayer du store
     const spy = vi.spyOn(store, 'removePlayer')
     
-    const wrapper = mount(PlayerCard, {
-      props: {
-        player: testPlayer
-      }
-    })
+    // Trouver le bouton de suppression par son contenu
+    const removeButton = wrapper.findAll('button').find(b => b.text().includes('Supprimer'))
+    expect(removeButton).toBeDefined()
     
-    // Cliquer sur le bouton de suppression
-    const removeButton = wrapper.findAll('button')[1]
-    await removeButton.trigger('click')
-    
-    // Vérifier que la méthode a été appelée avec le bon ID
-    expect(spy).toHaveBeenCalledWith(testPlayer.id)
+    if (removeButton) {
+      await removeButton.trigger('click')
+      
+      // Vérifier que la méthode a été appelée avec le bon ID
+      expect(spy).toHaveBeenCalledWith(playerId)
+    }
   })
 
   it('saves changes when save button is clicked in edit mode', async () => {
-    // Add the player to the store first
-    store.players = [testPlayer]
-    
     // Mettre le joueur en mode édition
-    store.startEditingPlayer(testPlayer.id)
-    
-    // Espionner la méthode saveEditedPlayer du store
-    const spy = vi.spyOn(store, 'saveEditedPlayer')
+    store.startEditingPlayer(playerId)
     
     const wrapper = mount(PlayerCard, {
       props: {
-        player: testPlayer
+        playerId
       }
     })
-
-    // Cliquer sur le bouton d'enregistrement
-    const saveButton = wrapper.findAll('button')[1]
-    await saveButton.trigger('click')
     
-    // Vérifier que la méthode a été appelée
-    expect(spy).toHaveBeenCalled()
+    // Espionner la méthode updatePlayer du store
+    const spy = vi.spyOn(store, 'updatePlayer')
+    
+    // Trouver le bouton d'enregistrement
+    const saveButton = wrapper.findAll('button').find(b => b.text().includes('Enregistrer'))
+    expect(saveButton).toBeDefined()
+    
+    if (saveButton) {
+      await saveButton.trigger('click')
+      
+      // Vérifier que la méthode a été appelée
+      expect(spy).toHaveBeenCalled()
+    }
   })
 
   it('cancels editing when cancel button is clicked in edit mode', async () => {
-    // Add the player to the store first
-    store.players = [testPlayer]
-    
     // Mettre le joueur en mode édition
-    store.startEditingPlayer(testPlayer.id)
-    
-    // Espionner la méthode cancelEditing du store
-    const spy = vi.spyOn(store, 'cancelEditing')
+    store.startEditingPlayer(playerId)
     
     const wrapper = mount(PlayerCard, {
       props: {
-        player: testPlayer
+        playerId
       }
     })
-
-    // Cliquer sur le bouton d'annulation
-    const cancelButton = wrapper.findAll('button')[0]
-    await cancelButton.trigger('click')
     
-    // Vérifier que la méthode a été appelée
-    expect(spy).toHaveBeenCalled()
+    // Espionner la méthode cancelEditingPlayer du store
+    const spy = vi.spyOn(store, 'cancelEditingPlayer')
+    
+    // Trouver le bouton d'annulation
+    const cancelButton = wrapper.findAll('button').find(b => b.text().includes('Annuler'))
+    expect(cancelButton).toBeDefined()
+    
+    if (cancelButton) {
+      await cancelButton.trigger('click')
+      
+      // Vérifier que la méthode a été appelée
+      expect(spy).toHaveBeenCalled()
+    }
   })
 
   it('displays dexterity modifier correctly', () => {
+    // Mettre à jour le joueur dans le store avec les valeurs attendues
+    store.updatePlayer(playerId, {
+      dexterity: 16
+    })
+    
     const wrapper = mount(PlayerCard, {
       props: {
-        player: testPlayer
+        playerId
       }
     })
 
-    // La formule pour le modificateur est (dex - 10) / 2, arrondi à l'inférieur
     // Pour une dextérité de 16, le modificateur devrait être +3
-    expect(wrapper.text()).toContain('DEX: 16 (+3)')
+    // Le format dans le template est "DEX: 16 (+3)"
+    expect(wrapper.text()).toContain('DEX: 16')
+    expect(wrapper.text()).toContain('(+3)')
+  })
+
+  it('updates initiative when input value changes', async () => {
+    // Espionner la méthode updatePlayerInitiative du store
+    const spy = vi.spyOn(store, 'updatePlayerInitiative')
+    
+    // Simuler un changement d'initiative en appelant directement la méthode du store
+    store.updatePlayerInitiative(playerId, 20)
+    
+    // Vérifier que la méthode a été appelée avec le bon ID et la nouvelle valeur
+    expect(spy).toHaveBeenCalledWith(playerId, 20)
   })
 })

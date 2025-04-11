@@ -1,216 +1,269 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { usePlayerStore } from '../../stores/player'
-
-// Mock UUID pour des tests déterministes
-vi.mock('uuid', () => ({
-  v4: vi.fn(() => 'test-uuid')
-}))
-
-// Mock localStorage
-vi.stubGlobal('localStorage', {
-  getItem: vi.fn(() => null),
-  setItem: vi.fn()
-})
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 describe('Player Store', () => {
   beforeEach(() => {
-    // Réinitialiser les mocks
-    vi.clearAllMocks()
-    
     // Créer une nouvelle instance de Pinia pour chaque test
     setActivePinia(createPinia())
+    
+    // Mocker localStorage
+    const localStorageMock = (() => {
+      let store: Record<string, string> = {}
+      return {
+        getItem: vi.fn((key: string) => {
+          return store[key] || null
+        }),
+        setItem: vi.fn((key: string, value: string) => {
+          store[key] = value.toString()
+        }),
+        clear: vi.fn(() => {
+          store = {}
+        })
+      }
+    })()
+    
+    Object.defineProperty(window, 'localStorage', {
+      value: localStorageMock
+    })
   })
-
+  
   it('should initialize with empty players array', () => {
     const store = usePlayerStore()
     expect(store.players).toEqual([])
   })
-
+  
   it('should add a player', () => {
     const store = usePlayerStore()
-    const player = {
+    
+    // Ajouter un joueur
+    store.addPlayer({
       name: 'Aragorn',
-      initiative: 3,
+      initiative: 15,
       dexterity: 16,
       notes: 'Ranger du Nord'
-    }
+    })
     
-    store.addPlayer(player)
-    
+    // Vérifier que le joueur a été ajouté
     expect(store.players.length).toBe(1)
-    expect(store.players[0]).toEqual({
-      ...player,
-      id: 'test-uuid'
-    })
+    expect(store.players[0].name).toBe('Aragorn')
+    expect(store.players[0].initiative).toBe(15)
+    expect(store.players[0].dexterity).toBe(16)
+    expect(store.players[0].notes).toBe('Ranger du Nord')
+    
+    // Vérifier que le joueur a un ID
+    expect(store.players[0].id).toBeDefined()
   })
-
-  it('should remove a player', () => {
-    const store = usePlayerStore()
-    store.addPlayer({
-      name: 'Aragorn',
-      initiative: 3,
-      dexterity: 16
-    })
-    
-    const id = store.players[0].id
-    
-    // Mock window.confirm to return true
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
-    
-    store.removePlayer(id)
-    
-    expect(store.players.length).toBe(0)
-    
-    // Clean up mock
-    confirmSpy.mockRestore()
-  })
-
+  
   it('should update a player', () => {
     const store = usePlayerStore()
+    
+    // Ajouter un joueur
     store.addPlayer({
       name: 'Aragorn',
-      initiative: 3,
-      dexterity: 16
+      initiative: 15,
+      dexterity: 16,
+      notes: 'Ranger du Nord'
     })
     
-    const id = store.players[0].id
-    store.updatePlayer(id, { name: 'Strider' })
+    const playerId = store.players[0].id
     
+    // Mettre à jour le joueur
+    store.updatePlayer(playerId, {
+      name: 'Strider',
+      initiative: 16
+    })
+    
+    // Vérifier que le joueur a été mis à jour
     expect(store.players[0].name).toBe('Strider')
+    expect(store.players[0].initiative).toBe(16)
+    expect(store.players[0].dexterity).toBe(16) // Inchangé
+    expect(store.players[0].notes).toBe('Ranger du Nord') // Inchangé
   })
-
+  
   it('should update player initiative', () => {
     const store = usePlayerStore()
+    
+    // Ajouter un joueur
     store.addPlayer({
       name: 'Aragorn',
-      initiative: 3,
-      dexterity: 16
+      initiative: 15,
+      dexterity: 16,
+      notes: 'Ranger du Nord'
     })
     
-    const id = store.players[0].id
-    store.updatePlayerInitiative(id, 7)
+    const playerId = store.players[0].id
     
-    expect(store.players[0].initiative).toBe(7)
+    // Mettre à jour l'initiative du joueur
+    store.updatePlayerInitiative(playerId, 20)
+    
+    // Vérifier que l'initiative a été mise à jour
+    expect(store.players[0].initiative).toBe(20)
   })
-
+  
+  it('should remove a player', () => {
+    const store = usePlayerStore()
+    
+    // Mocker confirm pour qu'il retourne toujours true
+    vi.spyOn(window, 'confirm').mockImplementation(() => true)
+    
+    // Ajouter un joueur
+    store.addPlayer({
+      name: 'Aragorn',
+      initiative: 15,
+      dexterity: 16,
+      notes: 'Ranger du Nord'
+    })
+    
+    const playerId = store.players[0].id
+    
+    // Supprimer le joueur
+    store.removePlayer(playerId)
+    
+    // Vérifier que le joueur a été supprimé
+    expect(store.players.length).toBe(0)
+  })
+  
+  it('should not remove a player if confirm returns false', () => {
+    const store = usePlayerStore()
+    
+    // Mocker confirm pour qu'il retourne false
+    vi.spyOn(window, 'confirm').mockImplementation(() => false)
+    
+    // Ajouter un joueur
+    store.addPlayer({
+      name: 'Aragorn',
+      initiative: 15,
+      dexterity: 16,
+      notes: 'Ranger du Nord'
+    })
+    
+    const playerId = store.players[0].id
+    
+    // Tenter de supprimer le joueur
+    store.removePlayer(playerId)
+    
+    // Vérifier que le joueur n'a pas été supprimé
+    expect(store.players.length).toBe(1)
+  })
+  
   it('should reorder players', () => {
     const store = usePlayerStore()
+    
+    // Ajouter deux joueurs
     store.addPlayer({
       name: 'Aragorn',
-      initiative: 3,
-      dexterity: 16
+      initiative: 15,
+      dexterity: 16,
+      notes: 'Ranger du Nord'
     })
-    
-    // Get the v4 mock from the uuid module
-    const { v4: uuidMock } = vi.hoisted(() => ({ v4: vi.fn() }))
-    
-    // Change the mock return value for the next call
-    uuidMock.mockReturnValueOnce('test-uuid-2')
     
     store.addPlayer({
       name: 'Legolas',
-      initiative: 5,
-      dexterity: 18
+      initiative: 18,
+      dexterity: 20,
+      notes: 'Elfe archer'
     })
     
-    // Inverser l'ordre
-    const newOrder = [...store.players].reverse()
-    store.reorderPlayers(newOrder)
+    // Récupérer les IDs des joueurs
+    const player1 = store.players[0]
+    const player2 = store.players[1]
     
+    // Réordonner les joueurs
+    store.reorderPlayers([player2, player1])
+    
+    // Vérifier que les joueurs ont été réordonnés
     expect(store.players[0].name).toBe('Legolas')
     expect(store.players[1].name).toBe('Aragorn')
   })
-
-  it('should calculate ability modifiers correctly', () => {
+  
+  it('should calculate ability modifier correctly', () => {
     const store = usePlayerStore()
     
-    // Selon les règles de D&D 5e
-    expect(store.getAbilityModifier(1)).toBe(-5)
-    expect(store.getAbilityModifier(4)).toBe(-3)
+    // Tester différentes valeurs
     expect(store.getAbilityModifier(10)).toBe(0)
-    expect(store.getAbilityModifier(15)).toBe(2)
+    expect(store.getAbilityModifier(12)).toBe(1)
+    expect(store.getAbilityModifier(8)).toBe(-1)
     expect(store.getAbilityModifier(20)).toBe(5)
-    expect(store.getAbilityModifier(30)).toBe(10)
+    expect(store.getAbilityModifier(1)).toBe(-5)
   })
-
+  
   it('should format ability modifier display correctly', () => {
     const store = usePlayerStore()
     
+    // Tester différentes valeurs
     expect(store.getAbilityModifierDisplay(10)).toBe('+0')
-    expect(store.getAbilityModifierDisplay(18)).toBe('+4')
-    expect(store.getAbilityModifierDisplay(7)).toBe('-2')
+    expect(store.getAbilityModifierDisplay(12)).toBe('+1')
+    expect(store.getAbilityModifierDisplay(8)).toBe('-1')
+    expect(store.getAbilityModifierDisplay(20)).toBe('+5')
+    expect(store.getAbilityModifierDisplay(1)).toBe('-5')
   })
-
+  
   it('should handle editing state correctly', () => {
     const store = usePlayerStore()
+    
+    // Ajouter un joueur
     store.addPlayer({
       name: 'Aragorn',
-      initiative: 3,
-      dexterity: 16
+      initiative: 15,
+      dexterity: 16,
+      notes: 'Ranger du Nord'
     })
     
-    const id = store.players[0].id
+    const playerId = store.players[0].id
     
-    // Par défaut, aucun joueur n'est en cours d'édition
+    // Vérifier l'état initial
     expect(store.editingPlayerId).toBe(null)
     expect(store.isEditingAnyPlayer).toBe(false)
     
     // Commencer l'édition
-    store.startEditingPlayer(id)
-    expect(store.editingPlayerId).toBe(id)
+    store.startEditingPlayer(playerId)
+    expect(store.editingPlayerId).toBe(playerId)
     expect(store.isEditingAnyPlayer).toBe(true)
-    expect(store.currentEditingPlayer).toEqual(store.players[0])
     
     // Annuler l'édition
-    store.cancelEditing()
+    store.cancelEditingPlayer()
     expect(store.editingPlayerId).toBe(null)
     expect(store.isEditingAnyPlayer).toBe(false)
   })
-
-  it('should save edited player', () => {
+  
+  it('should get player by id', () => {
     const store = usePlayerStore()
+    
+    // Ajouter un joueur
     store.addPlayer({
       name: 'Aragorn',
-      initiative: 3,
-      dexterity: 16
+      initiative: 15,
+      dexterity: 16,
+      notes: 'Ranger du Nord'
     })
     
-    const id = store.players[0].id
+    const playerId = store.players[0].id
     
-    // Commencer l'édition
-    store.startEditingPlayer(id)
+    // Récupérer le joueur par son ID
+    const player = store.getPlayerById(playerId)
     
-    // Modifier les données temporaires
-    store.tempPlayerData.name = 'Strider'
+    // Vérifier que le bon joueur a été récupéré
+    expect(player).toBeDefined()
+    expect(player?.name).toBe('Aragorn')
     
-    // Sauvegarder les modifications
-    store.saveEditedPlayer()
-    
-    // Vérifier que les données ont été mises à jour
-    expect(store.players[0].name).toBe('Strider')
-    expect(store.editingPlayerId).toBe(null)
+    // Tester avec un ID inexistant
+    const nonExistentPlayer = store.getPlayerById('non-existent-id')
+    expect(nonExistentPlayer).toBeUndefined()
   })
-
-  it('should reset form correctly', () => {
+  
+  it('should toggle adding player state', () => {
     const store = usePlayerStore()
     
-    // Modifier les données temporaires
-    store.tempPlayerData.name = 'Aragorn'
-    store.tempPlayerData.initiative = 3
-    store.tempPlayerData.dexterity = 16
-    store.tempPlayerData.notes = 'Ranger du Nord'
+    // Vérifier l'état initial
+    expect(store.isAddingPlayer).toBe(false)
     
-    // Réinitialiser le formulaire
-    store.resetForm()
+    // Activer l'ajout de joueur
+    store.startAddingPlayer()
+    expect(store.isAddingPlayer).toBe(true)
     
-    // Vérifier que les données ont été réinitialisées
-    expect(store.tempPlayerData).toEqual({
-      name: '',
-      initiative: 0,
-      dexterity: 10,
-      notes: ''
-    })
+    // Désactiver l'ajout de joueur
+    store.cancelAddingPlayer()
     expect(store.isAddingPlayer).toBe(false)
   })
 })

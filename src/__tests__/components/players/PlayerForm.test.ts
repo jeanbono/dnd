@@ -1,7 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest'
 import {mount} from '@vue/test-utils'
 import {createPinia, setActivePinia} from 'pinia'
-import type {Player} from '../../../stores/player'
 import {usePlayerStore} from '../../../stores/player'
 import PlayerForm from '../../../components/players/PlayerForm.vue'
 
@@ -12,14 +11,6 @@ describe('PlayerForm', () => {
     // Configuration de Pinia
     setActivePinia(createPinia())
     store = usePlayerStore()
-    
-    // Reset form data before each test
-    store.tempPlayerData = {
-      name: '',
-      initiative: 0,
-      dexterity: 10,
-      notes: ''
-    }
   })
 
   it('renders correctly', () => {
@@ -45,7 +36,7 @@ describe('PlayerForm', () => {
     expect(buttons[1].text()).toBe('Annuler')
   })
 
-  it('binds form fields to store data', async () => {
+  it('updates local form data when inputs change', async () => {
     const wrapper = mount(PlayerForm)
 
     // Remplir le formulaire
@@ -58,10 +49,10 @@ describe('PlayerForm', () => {
     await initiativeInput.setValue(5)
     await dexterityInput.setValue(18)
     
-    // Vérifier que les données du store ont été mises à jour
-    expect(store.tempPlayerData.name).toBe('Legolas')
-    expect(store.tempPlayerData.initiative).toBe(5)
-    expect(store.tempPlayerData.dexterity).toBe(18)
+    // Vérifier que les valeurs des inputs ont été mises à jour
+    expect(nameInput.element.value).toBe('Legolas')
+    expect(initiativeInput.element.value).toBe('5')
+    expect(dexterityInput.element.value).toBe('18')
   })
 
   it('calls addPlayer when form is submitted with valid data', async () => {
@@ -78,12 +69,12 @@ describe('PlayerForm', () => {
     await addButton.trigger('click')
     
     // Vérifier que addPlayer a été appelé avec les bonnes données
-    expect(addPlayerSpy).toHaveBeenCalledWith({
+    expect(addPlayerSpy).toHaveBeenCalledWith(expect.objectContaining({
       name: 'Legolas',
       initiative: 0, // Valeur par défaut
       dexterity: 10, // Valeur par défaut
       notes: ''
-    } as Omit<Player, 'id'>)
+    }))
   })
 
   it('does not call addPlayer when form is submitted with invalid data', async () => {
@@ -101,8 +92,8 @@ describe('PlayerForm', () => {
     expect(addPlayerSpy).not.toHaveBeenCalled()
   })
 
-  it('calls resetForm when cancel button is clicked', async () => {
-    const resetFormSpy = vi.spyOn(store, 'resetForm')
+  it('calls cancelAddingPlayer when cancel button is clicked', async () => {
+    const cancelAddingPlayerSpy = vi.spyOn(store, 'cancelAddingPlayer')
     
     const wrapper = mount(PlayerForm)
 
@@ -110,7 +101,23 @@ describe('PlayerForm', () => {
     const cancelButton = wrapper.findAll('button')[1]
     await cancelButton.trigger('click')
     
-    // Vérifier que resetForm a été appelé
-    expect(resetFormSpy).toHaveBeenCalled()
+    // Vérifier que cancelAddingPlayer a été appelé
+    expect(cancelAddingPlayerSpy).toHaveBeenCalled()
+  })
+  
+  it('resets form data after submission', async () => {
+    const wrapper = mount(PlayerForm)
+
+    // Remplir le formulaire
+    const inputs = wrapper.findAll('input')
+    const nameInput = inputs[0]
+    await nameInput.setValue('Legolas')
+    
+    // Cliquer sur le bouton d'ajout
+    const addButton = wrapper.findAll('button')[0]
+    await addButton.trigger('click')
+    
+    // Vérifier que les champs ont été réinitialisés
+    expect(nameInput.element.value).toBe('')
   })
 })

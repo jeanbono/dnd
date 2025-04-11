@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { ref } from 'vue';
 import { usePlayerStore } from '../../stores/player';
 
 const playerStore = usePlayerStore();
 
-// Utiliser directement les données du store
-const playerData = computed({
-  get: () => playerStore.tempPlayerData,
-  set: (value) => Object.assign(playerStore.tempPlayerData, value)
+// Données du formulaire gérées localement
+const playerData = ref({
+  name: '',
+  initiative: 0,
+  dexterity: 10,
+  notes: ''
 });
 
 function handleSubmit() {
@@ -21,11 +23,22 @@ function handleSubmit() {
     };
     
     playerStore.addPlayer(completePlayerData);
+    resetForm();
   }
 }
 
 function handleCancel() {
-  playerStore.resetForm();
+  playerStore.cancelAddingPlayer();
+  resetForm();
+}
+
+function resetForm() {
+  playerData.value = {
+    name: '',
+    initiative: 0,
+    dexterity: 10,
+    notes: ''
+  };
 }
 </script>
 

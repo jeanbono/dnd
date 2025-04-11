@@ -1,7 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest'
 import {mount} from '@vue/test-utils'
 import {createPinia, setActivePinia} from 'pinia'
-import type {Player} from '../../../stores/player'
 import {usePlayerStore} from '../../../stores/player'
 // Import components after mocking
 import PlayerList from '../../../components/players/PlayerList.vue'
@@ -19,8 +18,8 @@ vi.mock('sortablejs', () => ({
 vi.mock('../../../components/players/PlayerCard.vue', () => ({
   default: {
     name: 'PlayerCard',
-    props: ['player'],
-    template: '<div class="player-card" :data-id="player.id">{{ player.name }}</div>'
+    props: ['playerId'],
+    template: '<div class="player-card" :data-id="playerId">Player Card {{ playerId }}</div>'
   }
 }))
 
@@ -68,10 +67,8 @@ describe('PlayerList', () => {
 
   it('renders players when they exist in the store', async () => {
     // Ajouter des joueurs au store
-    store.players = [
-      { id: '1', name: 'Aragorn', initiative: 3, dexterity: 16, notes: '' },
-      { id: '2', name: 'Legolas', initiative: 5, dexterity: 18, notes: '' }
-    ] as Player[]
+    store.addPlayer({ name: 'Aragorn', initiative: 3, dexterity: 16, notes: '' })
+    store.addPlayer({ name: 'Legolas', initiative: 5, dexterity: 18, notes: '' })
     
     const wrapper = mount(PlayerList)
 

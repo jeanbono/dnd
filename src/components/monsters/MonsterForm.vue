@@ -1,21 +1,87 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useMonsterStore } from '../../stores/monster';
 
 const monsterStore = useMonsterStore();
 const isEditing = computed(() => !!monsterStore.editingMonsterId);
-const monsterData = computed(() => monsterStore.tempMonsterData);
+
+// Données du formulaire gérées localement
+const monsterData = ref({
+  name: '',
+  initiative: 0,
+  hp: 0,
+  maxHp: 0,
+  ac: 0,
+  notes: '',
+  strength: 10,
+  dexterity: 10,
+  constitution: 10,
+  intelligence: 10,
+  wisdom: 10,
+  charisma: 10
+});
+
+// Si nous sommes en mode édition, charger les données du monstre
+watch(() => monsterStore.editingMonsterId, (newId) => {
+  if (newId) {
+    const monster = monsterStore.getMonsterById(newId);
+    if (monster) {
+      monsterData.value = {
+        name: monster.name,
+        initiative: monster.initiative,
+        hp: monster.hp,
+        maxHp: monster.maxHp,
+        ac: monster.ac,
+        notes: monster.notes || '',
+        strength: monster.strength || 10,
+        dexterity: monster.dexterity || 10,
+        constitution: monster.constitution || 10,
+        intelligence: monster.intelligence || 10,
+        wisdom: monster.wisdom || 10,
+        charisma: monster.charisma || 10
+      };
+    }
+  } else {
+    resetForm();
+  }
+}, { immediate: true });
 
 function handleSubmit() {
   if (isEditing.value) {
-    monsterStore.saveEditedMonster();
+    if (monsterStore.editingMonsterId) {
+      monsterStore.updateMonster(monsterStore.editingMonsterId, monsterData.value);
+      monsterStore.cancelEditingMonster();
+    }
   } else {
-    monsterStore.addMonsterFromTemp();
+    monsterStore.addMonster(monsterData.value);
   }
+  resetForm();
 }
 
 function handleCancel() {
-  monsterStore.cancelEditing();
+  if (isEditing.value) {
+    monsterStore.cancelEditingMonster();
+  } else {
+    monsterStore.cancelAddingMonster();
+  }
+  resetForm();
+}
+
+function resetForm() {
+  monsterData.value = {
+    name: '',
+    initiative: 0,
+    hp: 0,
+    maxHp: 0,
+    ac: 0,
+    notes: '',
+    strength: 10,
+    dexterity: 10,
+    constitution: 10,
+    intelligence: 10,
+    wisdom: 10,
+    charisma: 10
+  };
 }
 </script>
 

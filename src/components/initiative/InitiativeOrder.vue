@@ -57,60 +57,58 @@ const hasCharacters = computed(() => {
 </script>
 
 <template>
-  <div class="p-4 bg-white rounded-md shadow border border-gray-200 mb-6">
-    <h2 class="text-xl font-semibold mb-4">Ordre d'Initiative</h2>
-    
-    <div v-if="!hasCharacters" class="text-center py-6 bg-gray-100 rounded-md">
-      <p class="text-gray-500">Aucun personnage dans l'ordre d'initiative pour le moment. Ajoutez des joueurs et des monstres pour commencer.</p>
+  <h2 class="text-xl font-semibold mb-4">Ordre d'Initiative</h2>
+  
+  <div v-if="!hasCharacters" class="text-center py-6 bg-gray-100 rounded-md">
+    <p class="text-gray-500">Aucun personnage dans l'ordre d'initiative pour le moment. Ajoutez des joueurs et des monstres pour commencer.</p>
+  </div>
+  
+  <template v-else>
+    <div class="mb-4 p-3 bg-yellow-50 rounded-md text-sm text-yellow-700">
+      <p>Les personnages sont classés par initiative (la plus élevée en premier). En cas d'égalité, le personnage avec la plus grande dextérité passe en premier.</p>
     </div>
     
-    <template v-else>
-      <div class="mb-4 p-3 bg-yellow-50 rounded-md text-sm text-yellow-700">
-        <p>Les personnages sont classés par initiative (la plus élevée en premier). En cas d'égalité, le personnage avec la plus grande dextérité passe en premier.</p>
-      </div>
+    <div class="grid grid-cols-2 gap-2">
+      <!-- Headers -->
+      <h3 class="text-lg font-medium mb-2 text-blue-700 text-center">Joueurs</h3>
+      <h3 class="text-lg font-medium mb-2 text-red-700 text-center">Monstres</h3>
       
-      <div class="grid grid-cols-2 gap-2">
-        <!-- Headers -->
-        <h3 class="text-lg font-medium mb-2 text-blue-700 text-center">Joueurs</h3>
-        <h3 class="text-lg font-medium mb-2 text-red-700 text-center">Monstres</h3>
+      <!-- Initiative rows -->
+      <template v-for="(character, index) in initiativeOrder" :key="`initiative-row-${index}`">
+        <!-- Player column -->
+        <div v-if="character.type === 'player'"
+             class="p-2 rounded-md flex justify-between items-center bg-blue-50 border border-blue-200">
+          <div class="flex items-center">
+            <div class="font-bold text-xl mr-3 w-6 text-center">{{ index + 1 }}</div>
+            <div>
+              <span class="font-medium">{{ character.name }}</span>
+              <div class="text-sm text-gray-600">
+                <span>Initiative : {{ character.initiative }}</span>
+                <span class="ml-2">DEX : {{ character.dexterity }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div v-else class="invisible"></div>
         
-        <!-- Initiative rows -->
-        <template v-for="(character, index) in initiativeOrder" :key="`initiative-row-${index}`">
-          <!-- Player column -->
-          <div v-if="character.type === 'player'"
-               class="p-2 rounded-md flex justify-between items-center bg-blue-50 border border-blue-200">
-            <div class="flex items-center">
-              <div class="font-bold text-xl mr-3 w-6 text-center">{{ index + 1 }}</div>
-              <div>
-                <span class="font-medium">{{ character.name }}</span>
-                <div class="text-sm text-gray-600">
-                  <span>Initiative : {{ character.initiative }}</span>
-                  <span class="ml-2">DEX : {{ character.dexterity }}</span>
-                </div>
+        <!-- Monster column -->
+        <div v-if="character.type === 'monster'"
+             :id="`initiative-monster-${character.id}`"
+             class="p-2 rounded-md flex justify-between items-center bg-red-50 border border-red-200 cursor-pointer hover:bg-red-100"
+             @click="scrollToMonster(character.id)">
+          <div class="flex items-center">
+            <div class="font-bold text-xl mr-3 w-6 text-center">{{ index + 1 }}</div>
+            <div>
+              <span class="font-medium">{{ character.name }}</span>
+              <div class="text-sm text-gray-600">
+                <span>Initiative : {{ character.initiative }}</span>
+                <span class="ml-2">DEX : {{ character.dexterity }}</span>
               </div>
             </div>
           </div>
-          <div v-else class="invisible"></div>
-          
-          <!-- Monster column -->
-          <div v-if="character.type === 'monster'"
-               :id="`initiative-monster-${character.id}`"
-               class="p-2 rounded-md flex justify-between items-center bg-red-50 border border-red-200 cursor-pointer hover:bg-red-100"
-               @click="scrollToMonster(character.id)">
-            <div class="flex items-center">
-              <div class="font-bold text-xl mr-3 w-6 text-center">{{ index + 1 }}</div>
-              <div>
-                <span class="font-medium">{{ character.name }}</span>
-                <div class="text-sm text-gray-600">
-                  <span>Initiative : {{ character.initiative }}</span>
-                  <span class="ml-2">DEX : {{ character.dexterity }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div v-else class="invisible"></div>
-        </template>
-      </div>
-    </template>
-  </div>
+        </div>
+        <div v-else class="invisible"></div>
+      </template>
+    </div>
+  </template>
 </template>

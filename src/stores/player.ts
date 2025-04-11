@@ -18,12 +18,6 @@ export const usePlayerStore = defineStore('player', () => {
   const players = ref<Player[]>(initialPlayers);
   const isAddingPlayer = ref(false);
   const editingPlayerId = ref<string | null>(null);
-  const tempPlayerData = ref<Partial<Player>>({
-    name: '',
-    initiative: 0,
-    dexterity: 10,
-    notes: ''
-  });
   
   // Computed properties
   const isEditingAnyPlayer = computed(() => editingPlayerId.value !== null);
@@ -52,17 +46,13 @@ export const usePlayerStore = defineStore('player', () => {
       ...defaultData
     };
     players.value.push(player);
-    resetForm();
+    isAddingPlayer.value = false;
   }
 
   function updatePlayer(id: string, data: Partial<Omit<Player, 'id'>>) {
     const index = players.value.findIndex(player => player.id === id);
     if (index !== -1) {
       players.value[index] = { ...players.value[index], ...data };
-    }
-    // If we're updating the player we're currently editing, also update the temp data
-    if (editingPlayerId.value === id) {
-      tempPlayerData.value = { ...tempPlayerData.value, ...data };
     }
   }
 
@@ -74,9 +64,9 @@ export const usePlayerStore = defineStore('player', () => {
     if (confirm('Êtes-vous sûr de vouloir supprimer ce joueur ?')) {
       players.value = players.value.filter(player => player.id !== id);
       
-      // If we were editing this player, reset the form
+      // If we were editing this player, reset the editing state
       if (editingPlayerId.value === id) {
-        resetForm();
+        editingPlayerId.value = null;
       }
     }
   }
@@ -85,40 +75,25 @@ export const usePlayerStore = defineStore('player', () => {
     players.value = newOrder;
   }
 
-  // Editing functions
+  function getPlayerById(id: string): Player | undefined {
+    return players.value.find(player => player.id === id);
+  }
+
+  // UI state management
   function startAddingPlayer() {
-    resetForm();
     isAddingPlayer.value = true;
   }
   
-  function startEditingPlayer(id: string) {
-    const player = players.value.find(p => p.id === id);
-    if (player) {
-      editingPlayerId.value = id;
-      tempPlayerData.value = { ...player };
-    }
-  }
-  
-  function cancelEditing() {
-    resetForm();
-  }
-  
-  function saveEditedPlayer() {
-    if (editingPlayerId.value) {
-      updatePlayer(editingPlayerId.value, tempPlayerData.value);
-      resetForm();
-    }
-  }
-  
-  function resetForm() {
+  function cancelAddingPlayer() {
     isAddingPlayer.value = false;
+  }
+  
+  function startEditingPlayer(id: string) {
+    editingPlayerId.value = id;
+  }
+  
+  function cancelEditingPlayer() {
     editingPlayerId.value = null;
-    tempPlayerData.value = {
-      name: '',
-      initiative: 0,
-      dexterity: 10,
-      notes: ''
-    };
   }
 
   // Utility functions
@@ -136,7 +111,6 @@ export const usePlayerStore = defineStore('player', () => {
     players,
     isAddingPlayer,
     editingPlayerId,
-    tempPlayerData,
     
     // Computed
     isEditingAnyPlayer,
@@ -149,10 +123,10 @@ export const usePlayerStore = defineStore('player', () => {
     removePlayer,
     reorderPlayers,
     startAddingPlayer,
+    cancelAddingPlayer,
     startEditingPlayer,
-    cancelEditing,
-    saveEditedPlayer,
-    resetForm,
+    cancelEditingPlayer,
+    getPlayerById,
     
     // Utilities
     getAbilityModifier,
