@@ -56,7 +56,7 @@ function hasDisadvantageOnAttacks(character: any) {
   }
   
   // Vérifier s'il y a une condition d'épuisement de niveau 3 ou plus
-  const exhaustionCondition = character.conditions.find(c => c.condition.id === 'exhaustion');
+  const exhaustionCondition = character.conditions.find((c: any) => c.condition.id === 'exhaustion');
   if (exhaustionCondition && exhaustionCondition.level >= 3) {
     return true;
   }
