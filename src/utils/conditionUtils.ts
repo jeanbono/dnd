@@ -95,6 +95,23 @@ export const exhaustionLevelDescriptions: Record<number, string> = {
 };
 
 /**
+ * Retourne tous les effets cumulatifs de l'épuisement jusqu'au niveau spécifié
+ */
+export function getExhaustionEffects(level: number): string[] {
+  const effects: string[] = [];
+  
+  // Limiter le niveau entre 1 et 6
+  const validLevel = Math.min(Math.max(1, level), 6);
+  
+  // Ajouter tous les effets jusqu'au niveau spécifié (cumulatif)
+  for (let i = 1; i <= validLevel; i++) {
+    effects.push(exhaustionLevelDescriptions[i]);
+  }
+  
+  return effects;
+}
+
+/**
  * Obtient la description complète d'une condition, y compris le niveau d'épuisement si applicable
  */
 export function getConditionDescription(conditionWithLevel: ConditionWithLevel): string {
@@ -142,6 +159,18 @@ export const disadvantageConditions = [
 ];
 
 /**
+ * Liste des conditions qui donnent un avantage aux attaques contre la créature
+ */
+export const advantageAgainstConditions = [
+  Condition.BLINDED,
+  Condition.PARALYZED,
+  Condition.PRONE,
+  Condition.RESTRAINED,
+  Condition.STUNNED,
+  Condition.UNCONSCIOUS
+];
+
+/**
  * Vérifie si une créature a un désavantage aux jets d'attaque en fonction de ses conditions
  */
 export function hasDisadvantage(conditions: ConditionWithLevel[]): boolean {
@@ -155,6 +184,21 @@ export function hasDisadvantage(conditions: ConditionWithLevel[]): boolean {
   const hasDisadvantageFromExhaustion = exhaustionLevel >= 3;
   
   return hasDisadvantageCondition || hasDisadvantageFromExhaustion;
+}
+
+/**
+ * Vérifie si les attaques contre une créature ont un avantage en fonction de ses conditions
+ */
+export function hasAdvantageAgainst(conditions: ConditionWithLevel[]): boolean {
+  // Vérifier les conditions standard qui donnent un avantage aux attaques contre
+  const hasAdvantageCondition = conditions.some(c => 
+    advantageAgainstConditions.some(ac => ac.id === c.condition.id)
+  );
+  
+  // Vérifier si la créature est inconsciente (donne automatiquement un avantage)
+  const isUnconscious = conditions.some(c => c.condition.id === Condition.UNCONSCIOUS.id);
+  
+  return hasAdvantageCondition || isUnconscious;
 }
 
 /**

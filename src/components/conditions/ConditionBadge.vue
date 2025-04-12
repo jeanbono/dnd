@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { Condition, conditionDescriptions, exhaustionLevelDescriptions, type ConditionData } from '@/utils/conditionUtils';
+import { Condition, conditionDescriptions, getExhaustionEffects, type ConditionData } from '@/utils/conditionUtils';
 import { useMonsterStore } from '@/stores/monster';
 import { usePlayerStore } from '@/stores/player';
 
@@ -101,7 +101,8 @@ const badgeText = computed(() => {
 // Description de la condition pour l'infobulle
 const tooltipText = computed(() => {
   if (props.condition.id === Condition.EXHAUSTION.id && props.level) {
-    return exhaustionLevelDescriptions[props.level];
+    // Obtenir tous les effets cumulatifs jusqu'au niveau actuel
+    return getExhaustionEffects(props.level).join('\n• ');
   }
   return conditionDescriptions[props.condition.id] || '';
 });
@@ -118,7 +119,17 @@ const tooltipText = computed(() => {
     <!-- Tooltip avec la description de la condition -->
     <div class="absolute left-1/2 bottom-full mb-2 hidden group-hover:block z-10 transform -translate-x-1/2">
       <div class="bg-gray-800 text-white text-xs rounded p-2 shadow-lg" style="min-width: 200px; max-width: 300px;">
-        {{ tooltipText }}
+        <template v-if="props.condition.id === Condition.EXHAUSTION.id && props.level">
+          <div class="font-semibold mb-1">Épuisement (niveau {{ props.level }}) :</div>
+          <ul class="list-disc pl-4">
+            <li v-for="(effect, index) in getExhaustionEffects(props.level)" :key="index">
+              {{ effect }}
+            </li>
+          </ul>
+        </template>
+        <template v-else>
+          {{ tooltipText }}
+        </template>
         <div class="absolute left-1/2 top-full transform -translate-x-1/2 -translate-y-1/2 rotate-45 w-2 h-2 bg-gray-800"></div>
       </div>
     </div>

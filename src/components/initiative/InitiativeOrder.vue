@@ -4,7 +4,7 @@ import { useTurnStore } from '@/stores/turn';
 import { useMonsterStore } from '@/stores/monster';
 import { usePlayerStore } from '@/stores/player';
 import { useDialogStore } from '@/stores/dialog';
-import { hasDisadvantage } from '@/utils/conditionUtils';
+import { hasDisadvantage, getExhaustionEffects, hasAdvantageAgainst } from '@/utils/conditionUtils';
 import NewCombatDialog from '@/components/initiative/NewCombatDialog.vue';
 
 const turnStore = useTurnStore();
@@ -73,6 +73,17 @@ function hasDisadvantageOnAttacks(character: any) {
   return hasDisadvantage(character.conditions);
 }
 
+// Fonction pour déterminer si les attaques contre une créature ont un avantage
+function hasAdvantageAgainstAttacks(character: any) {
+  // Vérifier si le personnage a des conditions
+  if (!character.conditions || character.conditions.length === 0) {
+    return false;
+  }
+  
+  // Vérifier les conditions qui donnent un avantage aux attaques contre
+  return hasAdvantageAgainst(character.conditions);
+}
+
 // Fonction pour obtenir le modificateur de dextérité (pour les joueurs)
 function getDexModifier(character: any) {
   if (character.type === 'player') {
@@ -105,6 +116,22 @@ function formatConditionsList(conditions: any[] | undefined) {
     }
     return name;
   }).join(', ');
+}
+
+// Fonction pour obtenir les détails d'une condition pour l'infobulle
+function getConditionDetails(condition: any): { title: string; effects?: string[] } {
+  // Si c'est l'épuisement, retourner les effets cumulatifs
+  if (condition.condition.id === 'exhaustion' && condition.level !== undefined) {
+    return {
+      title: `${condition.condition.label} (niveau ${condition.level})`,
+      effects: getExhaustionEffects(condition.level)
+    };
+  }
+  
+  // Pour les autres conditions, retourner simplement le nom
+  return {
+    title: condition.condition.label
+  };
 }
 </script>
 
@@ -183,6 +210,11 @@ function formatConditionsList(conditions: any[] | undefined) {
                           title="Ce personnage a un désavantage aux jets d'attaque">
                       Désavantage
                     </span>
+                    <span v-if="hasAdvantageAgainstAttacks(character)" 
+                          class="ml-2 px-1.5 py-0.5 text-xs font-semibold bg-green-100 text-green-800 rounded-full" 
+                          title="Les attaques contre ce personnage ont un avantage">
+                      Avantage contre
+                    </span>
                   </div>
                   <div class="text-sm text-gray-600">
                     <span>Initiative : {{ character.initiative }}</span>
@@ -202,7 +234,14 @@ function formatConditionsList(conditions: any[] | undefined) {
                     <div class="font-semibold mb-1">États actifs :</div>
                     <ul class="list-disc pl-4">
                       <li v-for="condition in character.conditions" :key="condition.condition.id">
-                        {{ formatConditionsList([condition]) }}
+                        <div>
+                          <div class="font-medium">{{ getConditionDetails(condition).title }}</div>
+                          <ul v-if="getConditionDetails(condition).effects" class="list-disc pl-4 mt-1 text-gray-300 text-xs">
+                            <li v-for="(effect, index) in getConditionDetails(condition).effects" :key="index">
+                              {{ effect }}
+                            </li>
+                          </ul>
+                        </div>
                       </li>
                     </ul>
                     <div class="absolute left-1/2 top-full transform -translate-x-1/2 -translate-y-1/2 rotate-45 w-2 h-2 bg-gray-800"></div>
@@ -228,6 +267,11 @@ function formatConditionsList(conditions: any[] | undefined) {
                           title="Ce monstre a un désavantage aux jets d'attaque">
                       Désavantage
                     </span>
+                    <span v-if="hasAdvantageAgainstAttacks(character)" 
+                          class="ml-2 px-1.5 py-0.5 text-xs font-semibold bg-green-100 text-green-800 rounded-full" 
+                          title="Les attaques contre ce monstre ont un avantage">
+                      Avantage contre
+                    </span>
                   </div>
                   <div class="text-sm text-gray-600">
                     <span>Initiative : {{ character.initiative }}</span>
@@ -247,7 +291,14 @@ function formatConditionsList(conditions: any[] | undefined) {
                     <div class="font-semibold mb-1">États actifs :</div>
                     <ul class="list-disc pl-4">
                       <li v-for="condition in character.conditions" :key="condition.condition.id">
-                        {{ formatConditionsList([condition]) }}
+                        <div>
+                          <div class="font-medium">{{ getConditionDetails(condition).title }}</div>
+                          <ul v-if="getConditionDetails(condition).effects" class="list-disc pl-4 mt-1 text-gray-300 text-xs">
+                            <li v-for="(effect, index) in getConditionDetails(condition).effects" :key="index">
+                              {{ effect }}
+                            </li>
+                          </ul>
+                        </div>
                       </li>
                     </ul>
                     <div class="absolute left-1/2 top-full transform -translate-x-1/2 -translate-y-1/2 rotate-45 w-2 h-2 bg-gray-800"></div>
