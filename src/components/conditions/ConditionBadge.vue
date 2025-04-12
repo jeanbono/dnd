@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { Condition, conditionDescriptions, getExhaustionEffects, type ConditionData } from '@/utils/conditionUtils';
+import { Condition, getConditionEffects, type ConditionData, type ConditionWithLevel } from '@/utils/conditionUtils';
 import { useMonsterStore } from '@/stores/monster';
 import { usePlayerStore } from '@/stores/player';
 
@@ -73,11 +73,6 @@ const textColor = computed(() => {
     return 'text-white';
   }
   
-  // Couleur spécifique pour "À terre"
-  if (props.condition.id === Condition.PRONE.id) {
-    return 'text-yellow-800';
-  }
-  
   // Couleurs de fond claires nécessitent du texte noir
   return 'text-black';
 });
@@ -98,13 +93,16 @@ const badgeText = computed(() => {
   return text;
 });
 
-// Description de la condition pour l'infobulle
-const tooltipText = computed(() => {
-  if (props.condition.id === Condition.EXHAUSTION.id && props.level) {
-    // Obtenir tous les effets cumulatifs jusqu'au niveau actuel
-    return getExhaustionEffects(props.level).join('\n• ');
-  }
-  return conditionDescriptions[props.condition.id] || '';
+// Obtenir les effets de la condition pour l'infobulle
+const conditionEffects = computed(() => {
+  // Créer un objet ConditionWithLevel pour utiliser avec getConditionEffects
+  const conditionWithLevel: ConditionWithLevel = {
+    condition: props.condition,
+    level: props.level,
+    duration: props.duration
+  };
+  
+  return getConditionEffects(conditionWithLevel);
 });
 </script>
 
@@ -116,20 +114,15 @@ const tooltipText = computed(() => {
   >
     {{ badgeText }}
     
-    <!-- Tooltip avec la description de la condition -->
+    <!-- Tooltip avec les effets de la condition -->
     <div class="absolute left-1/2 bottom-full mb-2 hidden group-hover:block z-10 transform -translate-x-1/2">
       <div class="bg-gray-800 text-white text-xs rounded p-2 shadow-lg" style="min-width: 200px; max-width: 300px;">
-        <template v-if="props.condition.id === Condition.EXHAUSTION.id && props.level">
-          <div class="font-semibold mb-1">Épuisement (niveau {{ props.level }}) :</div>
-          <ul class="list-disc pl-4">
-            <li v-for="(effect, index) in getExhaustionEffects(props.level)" :key="index">
-              {{ effect }}
-            </li>
-          </ul>
-        </template>
-        <template v-else>
-          {{ tooltipText }}
-        </template>
+        <div class="font-semibold mb-1">{{ props.condition.label }}{{ props.level ? ` (niveau ${props.level})` : '' }} :</div>
+        <ul class="list-disc pl-4">
+          <li v-for="(effect, index) in conditionEffects" :key="index" class="mb-1">
+            {{ effect }}
+          </li>
+        </ul>
         <div class="absolute left-1/2 top-full transform -translate-x-1/2 -translate-y-1/2 rotate-45 w-2 h-2 bg-gray-800"></div>
       </div>
     </div>

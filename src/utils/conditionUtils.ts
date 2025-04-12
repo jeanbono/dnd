@@ -8,27 +8,147 @@
 export interface ConditionData {
   id: string;
   label: string;
+  effects?: string[]; // Liste des effets de la condition
 }
 
 /**
- * Énumération des différentes conditions possibles avec leurs libellés
+ * Énumération des différentes conditions possibles avec leurs libellés et effets
  */
 export const Condition: Record<string, ConditionData> = {
-  BLINDED: { id: 'blinded', label: 'Aveuglé' },
-  CHARMED: { id: 'charmed', label: 'Charmé' },
-  DEAFENED: { id: 'deafened', label: 'Assourdi' },
-  EXHAUSTION: { id: 'exhaustion', label: 'Épuisement' },
-  FRIGHTENED: { id: 'frightened', label: 'Effrayé' },
-  GRAPPLED: { id: 'grappled', label: 'Agrippé' },
-  INCAPACITATED: { id: 'incapacitated', label: 'Incapable d\'agir' },
-  INVISIBLE: { id: 'invisible', label: 'Invisible' },
-  PARALYZED: { id: 'paralyzed', label: 'Paralysé' },
-  PETRIFIED: { id: 'petrified', label: 'Pétrifié' },
-  POISONED: { id: 'poisoned', label: 'Empoisonné' },
-  PRONE: { id: 'prone', label: 'À terre' },
-  RESTRAINED: { id: 'restrained', label: 'Entravé' },
-  STUNNED: { id: 'stunned', label: 'Étourdi' },
-  UNCONSCIOUS: { id: 'unconscious', label: 'Inconscient' }
+  BLINDED: { 
+    id: 'blinded', 
+    label: 'Aveuglé',
+    effects: [
+      'Échec automatique aux tests de caractéristique basés sur la vue',
+      'Désavantage aux jets d\'attaque',
+      'Les attaques contre la créature ont un avantage'
+    ]
+  },
+  CHARMED: { 
+    id: 'charmed', 
+    label: 'Charmé',
+    effects: [
+      'La créature ne peut pas attaquer celui qui l\'a charmée',
+      'Celui qui a charmé la créature a un avantage aux tests de caractéristique sociaux contre elle'
+    ]
+  },
+  DEAFENED: { 
+    id: 'deafened', 
+    label: 'Assourdi',
+    effects: [
+      'Échec automatique aux tests de caractéristique basés sur l\'ouïe'
+    ]
+  },
+  EXHAUSTION: { 
+    id: 'exhaustion', 
+    label: 'Épuisement',
+    // Les effets de l'épuisement sont gérés séparément via getExhaustionEffects
+  },
+  FRIGHTENED: { 
+    id: 'frightened', 
+    label: 'Effrayé',
+    effects: [
+      'Désavantage aux tests de caractéristique et jets d\'attaque tant que la source de la peur est visible',
+      'Ne peut pas se rapprocher volontairement de la source de sa peur'
+    ]
+  },
+  GRAPPLED: { 
+    id: 'grappled', 
+    label: 'Agrippé',
+    effects: [
+      'Vitesse réduite à 0',
+      'Fin de l\'état si celui qui agrippe est incapable d\'agir'
+    ]
+  },
+  INCAPACITATED: { 
+    id: 'incapacitated', 
+    label: 'Incapable d\'agir',
+    effects: [
+      'Ne peut pas effectuer d\'actions ni de réactions'
+    ]
+  },
+  INVISIBLE: { 
+    id: 'invisible', 
+    label: 'Invisible',
+    effects: [
+      'Impossible à voir sans magie ou sens spécial',
+      'Considéré comme fortement obscurci pour les attaques',
+      'Avantage aux jets d\'attaque',
+      'Les attaques contre la créature ont un désavantage'
+    ]
+  },
+  PARALYZED: { 
+    id: 'paralyzed', 
+    label: 'Paralysé',
+    effects: [
+      'Incapable d\'agir (incapacité)',
+      'Ne peut pas bouger ni parler',
+      'Échec automatique aux jets de sauvegarde de Force et de Dextérité',
+      'Avantage aux attaques contre la créature',
+      'Coup critique automatique si l\'attaquant est à moins de 1,5m'
+    ]
+  },
+  PETRIFIED: { 
+    id: 'petrified', 
+    label: 'Pétrifié',
+    effects: [
+      'Transformé en substance solide inanimée',
+      'Poids multiplié par 10',
+      'Ne vieillit plus',
+      'Incapable d\'agir (incapacité)',
+      'Avantage aux attaques contre la créature',
+      'Échec automatique aux jets de sauvegarde de Force et de Dextérité',
+      'Résistance à tous les dégâts'
+    ]
+  },
+  POISONED: { 
+    id: 'poisoned', 
+    label: 'Empoisonné',
+    effects: [
+      'Désavantage aux jets d\'attaque et aux tests de caractéristique'
+    ]
+  },
+  PRONE: { 
+    id: 'prone', 
+    label: 'À terre',
+    effects: [
+      'Peut seulement ramper ou se relever (coûte la moitié du mouvement)',
+      'Désavantage aux jets d\'attaque',
+      'Avantage aux attaques au corps à corps contre la créature',
+      'Désavantage aux attaques à distance contre la créature'
+    ]
+  },
+  RESTRAINED: { 
+    id: 'restrained', 
+    label: 'Entravé',
+    effects: [
+      'Vitesse réduite à 0',
+      'Désavantage aux jets d\'attaque',
+      'Les attaques contre la créature ont un avantage',
+      'Désavantage aux jets de sauvegarde de Dextérité'
+    ]
+  },
+  STUNNED: { 
+    id: 'stunned', 
+    label: 'Étourdi',
+    effects: [
+      'Incapable d\'agir (incapacité)',
+      'Ne peut parler que de façon hésitante',
+      'Échec automatique aux jets de sauvegarde de Force et de Dextérité',
+      'Avantage aux attaques contre la créature'
+    ]
+  },
+  UNCONSCIOUS: { 
+    id: 'unconscious', 
+    label: 'Inconscient',
+    effects: [
+      'Incapable d\'agir (incapacité)',
+      'Inconscient, lâche tout ce qu\'il tient et tombe à terre',
+      'Échec automatique aux jets de sauvegarde de Force et de Dextérité',
+      'Avantage aux attaques contre la créature',
+      'Coup critique automatique si l\'attaquant est à moins de 1,5m'
+    ]
+  }
 };
 
 /**
@@ -39,48 +159,6 @@ export interface ConditionWithLevel {
   level?: number; // Utilisé principalement pour l'épuisement
   duration?: number; // Durée en nombre de tours (optionnel)
 }
-
-/**
- * Traductions françaises des noms de conditions
- */
-export const conditionTranslations: Record<string, string> = {
-  [Condition.BLINDED.id]: Condition.BLINDED.label,
-  [Condition.CHARMED.id]: Condition.CHARMED.label,
-  [Condition.DEAFENED.id]: Condition.DEAFENED.label,
-  [Condition.EXHAUSTION.id]: Condition.EXHAUSTION.label,
-  [Condition.FRIGHTENED.id]: Condition.FRIGHTENED.label,
-  [Condition.GRAPPLED.id]: Condition.GRAPPLED.label,
-  [Condition.INCAPACITATED.id]: Condition.INCAPACITATED.label,
-  [Condition.INVISIBLE.id]: Condition.INVISIBLE.label,
-  [Condition.PARALYZED.id]: Condition.PARALYZED.label,
-  [Condition.PETRIFIED.id]: Condition.PETRIFIED.label,
-  [Condition.POISONED.id]: Condition.POISONED.label,
-  [Condition.PRONE.id]: Condition.PRONE.label,
-  [Condition.RESTRAINED.id]: Condition.RESTRAINED.label,
-  [Condition.STUNNED.id]: Condition.STUNNED.label,
-  [Condition.UNCONSCIOUS.id]: Condition.UNCONSCIOUS.label
-};
-
-/**
- * Descriptions des conditions pour l'affichage
- */
-export const conditionDescriptions: Record<string, string> = {
-  [Condition.BLINDED.id]: `${Condition.BLINDED.label} - Ne voit pas, rate les jets nécessitant la vue. Désavantage aux attaques, avantage aux attaques contre.`,
-  [Condition.CHARMED.id]: `${Condition.CHARMED.label} - Ne peut pas attaquer le charmeur. Le charmeur a avantage aux interactions sociales.`,
-  [Condition.DEAFENED.id]: `${Condition.DEAFENED.label} - N'entend pas, rate les jets nécessitant l'ouïe.`,
-  [Condition.EXHAUSTION.id]: `${Condition.EXHAUSTION.label} - Effets cumulatifs selon le niveau (1-6).`,
-  [Condition.FRIGHTENED.id]: `${Condition.FRIGHTENED.label} - Désavantage aux jets quand la source est visible. Ne peut s'approcher volontairement.`,
-  [Condition.GRAPPLED.id]: `${Condition.GRAPPLED.label} - Vitesse réduite à 0, pas de bonus de vitesse.`,
-  [Condition.INCAPACITATED.id]: `${Condition.INCAPACITATED.label} - Ne peut effectuer aucune action ni réaction.`,
-  [Condition.INVISIBLE.id]: `${Condition.INVISIBLE.label} - Ne peut être vu sans magie. Avantage aux attaques, désavantage aux attaques contre.`,
-  [Condition.PARALYZED.id]: `${Condition.PARALYZED.label} - Incapable d'agir, ne peut bouger ni parler. Rate jets Force/Dex. Coups critiques à 1,5m.`,
-  [Condition.PETRIFIED.id]: `${Condition.PETRIFIED.label} - Transformé en substance solide. Incapable d'agir, résistance aux dégâts.`,
-  [Condition.POISONED.id]: `${Condition.POISONED.label} - Désavantage aux jets d'attaque et de caractéristique.`,
-  [Condition.PRONE.id]: `${Condition.PRONE.label} - Peut ramper. Désavantage aux attaques. Avantage aux attaques contre à 1,5m, sinon désavantage.`,
-  [Condition.RESTRAINED.id]: `${Condition.RESTRAINED.label} - Vitesse à 0. Désavantage aux attaques et jets Dex. Avantage aux attaques contre.`,
-  [Condition.STUNNED.id]: `${Condition.STUNNED.label} - Incapable d'agir, ne peut bouger, parle difficilement. Rate jets Force/Dex. Avantage aux attaques contre.`,
-  [Condition.UNCONSCIOUS.id]: `${Condition.UNCONSCIOUS.label} - Incapable d'agir, tombe à terre. Rate jets Force/Dex. Avantage aux attaques contre, critiques à 1,5m.`
-};
 
 /**
  * Descriptions spécifiques pour les niveaux d'épuisement
@@ -112,31 +190,18 @@ export function getExhaustionEffects(level: number): string[] {
 }
 
 /**
- * Obtient la description complète d'une condition, y compris le niveau d'épuisement si applicable
+ * Obtient les effets détaillés d'une condition
  */
-export function getConditionDescription(conditionWithLevel: ConditionWithLevel): string {
-  const { condition, level, duration } = conditionWithLevel;
+export function getConditionEffects(conditionWithLevel: ConditionWithLevel): string[] {
+  const { condition, level } = conditionWithLevel;
   
-  let description = condition.label;
-  
-  // Ajouter le niveau pour l'épuisement
-  if (condition === Condition.EXHAUSTION && level !== undefined) {
-    description += ` (niveau ${level})`;
+  // Cas spécial pour l'épuisement qui a des niveaux
+  if (condition.id === Condition.EXHAUSTION.id && level !== undefined) {
+    return getExhaustionEffects(level);
   }
   
-  // Ajouter la durée si elle est définie
-  if (duration !== undefined) {
-    description += ` (${duration} tour${duration > 1 ? 's' : ''})`;
-  }
-  
-  return description;
-}
-
-/**
- * Vérifie si une condition est active pour une créature
- */
-export function hasCondition(conditions: ConditionWithLevel[], condition: ConditionData): boolean {
-  return conditions.some(c => c.condition.id === condition.id);
+  // Pour les autres conditions, retourner les effets définis
+  return condition.effects || ['Aucune information disponible sur les effets de cette condition'];
 }
 
 /**
