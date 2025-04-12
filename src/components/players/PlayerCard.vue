@@ -112,7 +112,7 @@ function saveChanges() {
 </script>
 
 <template>
-  <div v-if="player" class="bg-white rounded-md shadow border border-gray-200 p-4">
+  <div v-if="player" class="bg-white rounded-md shadow border border-gray-200 p-4" :id="`player-${player.id}`">
     <!-- En-tête du joueur - Toujours visible -->
     <div class="flex justify-between items-center mb-3">
       <div class="flex items-center">

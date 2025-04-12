@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
 import { calculateAbilityModifier, getAbilityScoreDisplay } from '@/utils/abilityUtils';
-import { decrementConditionDuration } from '@/utils/conditionUtils';
+import { decrementConditionDuration, Condition } from '@/utils/conditionUtils';
 import type { ConditionData } from '@/utils/conditionUtils';
 
 export interface Monster {
@@ -22,7 +22,7 @@ export interface Monster {
   wisdom?: number;
   charisma?: number;
   // Conditions/États
-  conditions: { condition: ConditionData; duration?: number }[];
+  conditions: { condition: ConditionData; duration?: number; level?: number }[];
 }
 
 interface MonsterSearchResult {
@@ -349,6 +349,32 @@ export const useMonsterStore = defineStore('monsters', () => {
     return monster.conditions.some(c => c.condition.id === condition.id);
   }
   
+  function updateExhaustionLevel(monsterId: string, level: number) {
+    const monster = getMonsterById(monsterId);
+    if (!monster) return;
+
+    // Vérifier si le monstre a déjà l'épuisement
+    const exhaustionIndex = monster.conditions.findIndex(c => c.condition.id === Condition.EXHAUSTION.id);
+
+    if (level <= 0) {
+      // Supprimer l'épuisement si le niveau est 0 ou négatif
+      if (exhaustionIndex >= 0) {
+        monster.conditions.splice(exhaustionIndex, 1);
+      }
+    } else {
+      if (exhaustionIndex >= 0) {
+        // Mettre à jour le niveau d'épuisement existant
+        monster.conditions[exhaustionIndex].level = level;
+      } else {
+        // Ajouter une nouvelle condition d'épuisement
+        monster.conditions.push({
+          condition: Condition.EXHAUSTION,
+          level: level
+        });
+      }
+    }
+  }
+  
   function clearAllConditions(monsterId: string) {
     const monster = getMonsterById(monsterId);
     if (!monster) return;
@@ -424,6 +450,7 @@ export const useMonsterStore = defineStore('monsters', () => {
     addCondition,
     removeCondition,
     hasCondition,
+    updateExhaustionLevel,
     clearAllConditions,
     decrementConditionDurations,
     removeAllMonsters,

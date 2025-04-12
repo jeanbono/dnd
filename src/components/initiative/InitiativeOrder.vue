@@ -20,6 +20,14 @@ function scrollToMonster(monsterId: string) {
   }
 }
 
+// Function to scroll to a player in the player list
+function scrollToPlayer(playerId: string) {
+  const playerElement = document.getElementById(`player-${playerId}`);
+  if (playerElement) {
+    playerElement.scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
 // Function to advance to the next turn
 function nextTurn() {
   // Increment the turn counter in the store
@@ -162,7 +170,8 @@ function formatConditionsList(conditions: any[] | undefined) {
           <template v-for="(character, index) in initiativeOrder" :key="`initiative-row-${index}`">
             <!-- Player column -->
             <div v-if="character.type === 'player'"
-                 class="p-2 rounded-md flex justify-between items-center bg-blue-50 border border-blue-200"
+                 class="p-2 rounded-md flex justify-between items-center bg-blue-50 border border-blue-200 cursor-pointer hover:bg-blue-100"
+                 @click="scrollToPlayer(character.id)"
                  :title="formatConditionsList(character.conditions)">
               <div class="flex items-center">
                 <div class="font-bold text-xl mr-3 w-6 text-center">{{ index + 1 }}</div>

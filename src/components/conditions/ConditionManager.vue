@@ -46,10 +46,7 @@ const availableConditions = computed(() => {
   
   return Object.values(Condition)
     .filter(condition => {
-      // L'épuisement est uniquement pour les joueurs
-      if (condition.id === Condition.EXHAUSTION.id && props.creatureType !== 'player') {
-        return false;
-      }
+      // Filtrer uniquement les conditions qui ne sont pas déjà appliquées
       return !existingConditionIds.has(condition.id);
     })
     .sort((a, b) => a.label.localeCompare(b.label));
@@ -83,6 +80,8 @@ function addCondition() {
 function updateExhaustion() {
   if (props.creatureType === 'player') {
     playerStore.updateExhaustionLevel(props.creatureId, Number(exhaustionLevel.value));
+  } else if (props.creatureType === 'monster') {
+    monsterStore.updateExhaustionLevel(props.creatureId, Number(exhaustionLevel.value));
   }
   showAddMenu.value = false;
 }
@@ -165,7 +164,7 @@ onUnmounted(() => {
           class="absolute z-10 left-0 top-full mt-1 bg-white rounded-md shadow-lg p-4 w-64 border border-gray-200"
         >
           <!-- Modification du niveau d'épuisement si déjà présent -->
-          <div v-if="hasExhaustion && props.creatureType === 'player'" class="mb-3 p-2 bg-blue-50 rounded-md border border-blue-100">
+          <div v-if="hasExhaustion" class="mb-3 p-2 bg-blue-50 rounded-md border border-blue-100">
             <div class="text-xs font-medium text-gray-700 mb-1">Épuisement</div>
             <div class="flex items-center justify-between">
               <input 
@@ -236,7 +235,7 @@ onUnmounted(() => {
           </div>
           
           <!-- Niveau d'épuisement (uniquement pour l'épuisement) -->
-          <div v-if="selectedCondition && selectedCondition.id === Condition.EXHAUSTION.id && props.creatureType === 'player'" class="mb-2">
+          <div v-if="selectedCondition && selectedCondition.id === Condition.EXHAUSTION.id" class="mb-2">
             <label class="block text-sm font-medium text-gray-700 mb-1">
               Niveau d'épuisement
             </label>
