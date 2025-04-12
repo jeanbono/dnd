@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@popperjs/core": "^2.11.8",
     "@vueuse/core": "^13.1.0",
     "pinia": "^3.0.2",
     "pinia-plugin-persistedstate": "^4.2.0",

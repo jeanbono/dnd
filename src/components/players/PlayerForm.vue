@@ -66,96 +66,105 @@ function resetForm() {
 </script>
 
 <template>
-  <div class="bg-gray-100 p-4 rounded-md mb-6">
-    <h3 class="font-semibold mb-3">Ajouter un Joueur</h3>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+  <div class="bg-gray-100 p-3 sm:p-4 rounded-md mb-4 sm:mb-6">
+    <h3 class="font-semibold mb-2 sm:mb-3 text-base sm:text-lg">Ajouter un Joueur</h3>
+    
+    <!-- Champs obligatoires -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4 mb-3">
       <div>
-        <label class="block text-sm font-medium mb-1">
+        <label class="block text-xs sm:text-sm font-medium mb-1">
           Nom <span class="text-red-500">*</span>
         </label>
         <input 
           v-model="playerData.name" 
           type="text" 
-          class="w-full p-2 border rounded-md"
+          class="w-full p-1.5 sm:p-2 border rounded-md text-sm"
           :class="{ 'border-red-500 bg-red-50': playerData.name === '' && formSubmitted, 'border-gray-300': !(playerData.name === '' && formSubmitted) }"
           required
         >
-        <p v-if="playerData.name === '' && formSubmitted" class="mt-1 text-xs text-red-500">
+        <p v-if="playerData.name === '' && formSubmitted" class="mt-0.5 text-xs text-red-500">
           Le nom est obligatoire
         </p>
       </div>
       <div>
-        <label class="block text-sm font-medium mb-1">
+        <label class="block text-xs sm:text-sm font-medium mb-1">
           Initiative <span class="text-red-500">*</span>
         </label>
         <input 
           v-model.number="playerData.initiative" 
           type="number" 
-          class="w-full p-2 border rounded-md"
+          class="w-full p-1.5 sm:p-2 border rounded-md text-sm"
           :class="{ 'border-red-500 bg-red-50': formSubmitted && initiativeInput && initiativeInput.value === '', 'border-gray-300': !(formSubmitted && initiativeInput && initiativeInput.value === '') }"
           ref="initiativeInput"
           required
         >
-        <p v-if="formSubmitted && initiativeInput && initiativeInput.value === ''" class="mt-1 text-xs text-red-500">
+        <p v-if="formSubmitted && initiativeInput && initiativeInput.value === ''" class="mt-0.5 text-xs text-red-500">
           L'initiative est obligatoire
         </p>
       </div>
       <div>
-        <label class="block text-sm font-medium mb-1">
+        <label class="block text-xs sm:text-sm font-medium mb-1">
           Dextérité <span class="text-red-500">*</span>
         </label>
         <input 
           v-model.number="playerData.dexterity" 
           type="number" 
-          class="w-full p-2 border rounded-md"
+          class="w-full p-1.5 sm:p-2 border rounded-md text-sm"
           :class="{ 'border-red-500 bg-red-50': formSubmitted && dexterityInput && dexterityInput.value === '', 'border-gray-300': !(formSubmitted && dexterityInput && dexterityInput.value === '') }"
           ref="dexterityInput"
           required
         >
-        <p v-if="formSubmitted && dexterityInput && dexterityInput.value === ''" class="mt-1 text-xs text-red-500">
+        <p v-if="formSubmitted && dexterityInput && dexterityInput.value === ''" class="mt-0.5 text-xs text-red-500">
           La dextérité est obligatoire
         </p>
       </div>
+    </div>
+    
+    <!-- Champs optionnels -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4">
       <div>
-        <label class="block text-sm font-medium mb-1">Points de Vie <span class="text-gray-400 text-xs">(optionnel)</span></label>
+        <label class="block text-xs sm:text-sm font-medium mb-1">PV <span class="text-gray-400 text-xs">(opt.)</span></label>
         <input 
           v-model.number="playerData.hp" 
           type="number" 
-          class="w-full p-2 border border-gray-300 rounded-md"
+          class="w-full p-1.5 sm:p-2 border border-gray-300 rounded-md text-sm"
         >
       </div>
       <div>
-        <label class="block text-sm font-medium mb-1">PV Maximum <span class="text-gray-400 text-xs">(optionnel)</span></label>
+        <label class="block text-xs sm:text-sm font-medium mb-1">PV Max <span class="text-gray-400 text-xs">(opt.)</span></label>
         <input 
           v-model.number="playerData.maxHp" 
           type="number" 
-          class="w-full p-2 border border-gray-300 rounded-md"
+          class="w-full p-1.5 sm:p-2 border border-gray-300 rounded-md text-sm"
         >
       </div>
       <div>
-        <label class="block text-sm font-medium mb-1">Classe d'Armure (CA)</label>
+        <label class="block text-xs sm:text-sm font-medium mb-1">CA</label>
         <input 
           v-model.number="playerData.ac" 
           type="number" 
-          class="w-full p-2 border border-gray-300 rounded-md"
+          class="w-full p-1.5 sm:p-2 border border-gray-300 rounded-md text-sm"
         >
       </div>
     </div>
     
-    <div class="flex justify-end mt-4">
-      <button 
-        @click="handleCancel" 
-        class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md mr-2"
-      >
-        Annuler
-      </button>
-      <button 
-        @click="handleSubmit" 
-        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
-      >
-        Ajouter
-      </button>
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-4">
+      <p class="text-xs text-gray-500 mb-2 sm:mb-0">Les champs marqués d'un <span class="text-red-500">*</span> sont obligatoires</p>
+      
+      <div class="flex flex-wrap gap-2">
+        <button 
+          @click="handleCancel" 
+          class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm"
+        >
+          Annuler
+        </button>
+        <button 
+          @click="handleSubmit" 
+          class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm"
+        >
+          Ajouter
+        </button>
+      </div>
     </div>
-    <p class="text-xs text-gray-500 mt-2">Les champs marqués d'un <span class="text-red-500">*</span> sont obligatoires</p>
   </div>
 </template>

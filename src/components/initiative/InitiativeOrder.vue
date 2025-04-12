@@ -303,14 +303,14 @@ function startNewCombat() {
 <template>
   <div class="mb-6">
     <!-- Affichage épique du tour -->
-    <div class="relative mb-6 flex justify-center">
+    <div class="relative mb-4 sm:mb-6 flex justify-center">
       <div class="absolute inset-0 bg-gradient-to-r from-purple-600 to-indigo-700 opacity-10 rounded-xl"></div>
-      <div class="relative py-4 px-6 flex flex-col items-center">
+      <div class="relative py-3 sm:py-4 px-4 sm:px-6 flex flex-col items-center">
         <div class="flex items-center">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-purple-700 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 sm:h-8 sm:w-8 text-purple-700 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
-          <span class="text-4xl font-bold text-purple-700">
+          <span class="text-3xl sm:text-4xl font-bold text-purple-700">
             Tour {{ turnStore.currentTurn }}
           </span>
         </div>
@@ -318,26 +318,28 @@ function startNewCombat() {
     </div>
 
     <!-- Header avec boutons -->
-    <div class="flex justify-between items-center mb-4">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3 sm:gap-0">
       <h2 class="text-xl font-semibold">Ordre d'Initiative</h2>
-      <div class="flex items-center space-x-3">
+      <div class="flex flex-wrap items-center gap-2 sm:space-x-3 w-full sm:w-auto">
         <button 
           @click="nextTurn()" 
-          class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-full flex items-center"
+          class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-1.5 sm:py-2 px-3 sm:px-4 rounded-md flex items-center text-xs sm:text-base flex-1 sm:flex-auto justify-center"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
           </svg>
-          Tour suivant
+          <span class="sm:hidden">Tour +</span>
+          <span class="hidden sm:inline">Tour suivant</span>
         </button>
         <button 
           @click="startNewCombat" 
-          class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md shadow transition-all duration-200 hover:shadow-lg flex items-center h-10"
+          class="bg-red-600 hover:bg-red-700 text-white py-1.5 sm:py-2 px-3 sm:px-4 rounded-md shadow transition-all duration-200 hover:shadow-lg flex items-center text-xs sm:text-base flex-1 sm:flex-auto justify-center"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
-          Nouveau combat
+          <span class="sm:hidden">Nouveau</span>
+          <span class="hidden sm:inline">Nouveau combat</span>
         </button>
       </div>
     </div>
@@ -374,21 +376,21 @@ function startNewCombat() {
                       'ml-0 mr-auto': character.type === 'player',
                       'ml-auto mr-0': character.type === 'monster'
                     }"
-                   class="p-2 rounded-md flex justify-between items-center border hover:bg-opacity-70 w-1/2 cursor-pointer hover:shadow-md transition-all duration-200"
+                   class="p-2 rounded-md flex justify-between items-center border hover:bg-opacity-70 w-full sm:w-1/2 cursor-pointer hover:shadow-md transition-all duration-200"
                    :title="character.type === 'player' ? 'Cliquez pour voir ce joueur' : 'Cliquez pour voir ce monstre'"
                    @click="character.type === 'player' ? scrollToPlayer(character.id) : scrollToMonster(character.id)">
                 <div class="flex items-center">
                   <div class="font-bold text-xl mr-3 w-6 text-center">{{ index + 1 }}</div>
                   <div class="flex-grow">
-                    <div class="flex items-center">
-                      <span class="font-medium">{{ character.name }}</span>
+                    <div class="flex items-center flex-wrap">
+                      <span class="font-medium mr-1">{{ character.name }}</span>
                       <span v-if="hasDisadvantageOnAttacks(character)" 
-                            class="ml-2 px-1.5 py-0.5 text-xs font-semibold bg-red-100 text-red-800 rounded-full" 
+                            class="mr-1 mt-1 px-1.5 py-0.5 text-xs font-semibold bg-red-100 text-red-800 rounded-full" 
                             :title="character.type === 'player' ? 'Ce personnage a un désavantage aux jets d\'attaque' : 'Ce monstre a un désavantage aux jets d\'attaque'">
                         Désavantage
                       </span>
                       <span v-if="hasAdvantageAgainstAttacks(character)" 
-                            class="ml-2 px-1.5 py-0.5 text-xs font-semibold bg-green-100 text-green-800 rounded-full" 
+                            class="mr-1 mt-1 px-1.5 py-0.5 text-xs font-semibold bg-green-100 text-green-800 rounded-full" 
                             :title="character.type === 'player' ? 'Les attaques contre ce personnage ont un avantage' : 'Les attaques contre ce monstre ont un avantage'">
                         Avantage contre
                       </span>
@@ -422,7 +424,7 @@ function startNewCombat() {
           
           <div v-if="waitingCharacters.length === 0" class="waiting-list space-y-2 bg-gray-50 p-4 rounded-lg border-2 border-dashed border-gray-300" ref="waitingListRef">
             <!-- Liste vide - le style CSS affichera un texte d'aide -->
-            <div class="text-center py-6 text-gray-500">
+            <div class="text-center py-6 text-gray-500 text-sm sm:text-base">
               Aucun personnage en attente. Glissez-déposez des personnages depuis la liste d'initiative pour les mettre en attente.
             </div>
           </div>
@@ -438,21 +440,21 @@ function startNewCombat() {
                       'ml-0 mr-auto': character.type === 'player',
                       'ml-auto mr-0': character.type === 'monster'
                     }"
-                   class="p-2 rounded-md flex justify-between items-center border hover:bg-opacity-70 w-1/2 cursor-pointer hover:shadow-md transition-all duration-200"
+                   class="p-2 rounded-md flex justify-between items-center border hover:bg-opacity-70 w-full sm:w-1/2 cursor-pointer hover:shadow-md transition-all duration-200"
                    :title="character.type === 'player' ? 'Cliquez pour voir ce joueur' : 'Cliquez pour voir ce monstre'"
                    @click="character.type === 'player' ? scrollToPlayer(character.id) : scrollToMonster(character.id)">
                 <div class="flex items-center">
                   <div class="font-bold text-xl mr-3 w-6 text-center">{{ index + 1 }}</div>
                   <div class="flex-grow">
-                    <div class="flex items-center">
-                      <span class="font-medium">{{ character.name }}</span>
+                    <div class="flex items-center flex-wrap">
+                      <span class="font-medium mr-1">{{ character.name }}</span>
                       <span v-if="hasDisadvantageOnAttacks(character)" 
-                            class="ml-2 px-1.5 py-0.5 text-xs font-semibold bg-red-100 text-red-800 rounded-full" 
+                            class="mr-1 mt-1 px-1.5 py-0.5 text-xs font-semibold bg-red-100 text-red-800 rounded-full" 
                             :title="character.type === 'player' ? 'Ce personnage a un désavantage aux jets d\'attaque' : 'Ce monstre a un désavantage aux jets d\'attaque'">
                         Désavantage
                       </span>
                       <span v-if="hasAdvantageAgainstAttacks(character)" 
-                            class="ml-2 px-1.5 py-0.5 text-xs font-semibold bg-green-100 text-green-800 rounded-full" 
+                            class="mr-1 mt-1 px-1.5 py-0.5 text-xs font-semibold bg-green-100 text-green-800 rounded-full" 
                             :title="character.type === 'player' ? 'Les attaques contre ce personnage ont un avantage' : 'Les attaques contre ce monstre ont un avantage'">
                         Avantage contre
                       </span>

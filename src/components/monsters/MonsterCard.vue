@@ -181,6 +181,26 @@ onUnmounted(() => {
       
       <div class="flex items-center space-x-2">
         <button 
+          v-if="!isEditing"
+          @click="monsterStore.startEditingMonster(monsterId)" 
+          class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded-md text-xs sm:text-sm"
+        >
+          <span class="hidden xs:inline">Modifier</span>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 xs:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
+        </button>
+        <button 
+          v-if="!isEditing"
+          @click="monsterStore.removeMonster(monsterId)" 
+          class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded-md text-xs sm:text-sm"
+        >
+          <span class="hidden xs:inline">Supprimer</span>
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 xs:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+        </button>
+        <button 
           @click="monsterStore.toggleExpand(monsterId)" 
           class="bg-gray-200 hover:bg-gray-300 text-gray-700 p-1 rounded-md"
         >
@@ -216,25 +236,25 @@ onUnmounted(() => {
         <div v-if="!isEditing" class="flex space-x-1">
           <button 
             @click="monsterStore.updateMonsterHp(monsterId, -1)" 
-            class="bg-red-100 hover:bg-red-200 text-red-700 px-2 rounded"
+            class="bg-red-100 hover:bg-red-200 text-red-700 px-1.5 sm:px-2 py-0.5 rounded text-xs sm:text-sm"
           >
             -1
           </button>
           <button 
             @click="monsterStore.updateMonsterHp(monsterId, -5)" 
-            class="bg-red-100 hover:bg-red-200 text-red-700 px-2 rounded"
+            class="bg-red-100 hover:bg-red-200 text-red-700 px-1.5 sm:px-2 py-0.5 rounded text-xs sm:text-sm"
           >
             -5
           </button>
           <button 
             @click="monsterStore.updateMonsterHp(monsterId, 1)" 
-            class="bg-green-100 hover:bg-green-200 text-green-700 px-2 rounded"
+            class="bg-green-100 hover:bg-green-200 text-green-700 px-1.5 sm:px-2 py-0.5 rounded text-xs sm:text-sm"
           >
             +1
           </button>
           <button 
             @click="monsterStore.updateMonsterHp(monsterId, 5)" 
-            class="bg-green-100 hover:bg-green-200 text-green-700 px-2 rounded"
+            class="bg-green-100 hover:bg-green-200 text-green-700 px-1.5 sm:px-2 py-0.5 rounded text-xs sm:text-sm"
           >
             +5
           </button>
@@ -261,15 +281,15 @@ onUnmounted(() => {
       
       <!-- Monster Details -->
       <div v-if="!isEditing" class="flex flex-col">
-        <div class="flex justify-between items-center mb-2">
+        <div class="flex justify-between items-center gap-2 mb-2">
           <button 
             @click="monsterStore.toggleStats(monsterId)" 
-            class="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded-md text-sm"
+            class="flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-1 rounded-md text-xs sm:text-sm"
           >
             <span>{{ showStats ? 'Masquer stats' : 'Afficher stats' }}</span>
             <svg 
               xmlns="http://www.w3.org/2000/svg" 
-              class="h-4 w-4 ml-1" 
+              class="h-3 w-3 sm:h-4 sm:w-4 ml-1" 
               fill="none" 
               viewBox="0 0 24 24" 
               stroke="currentColor"
@@ -283,20 +303,13 @@ onUnmounted(() => {
             </svg>
           </button>
           
-          <div class="flex space-x-2">
-            <button 
-              @click="rollInitiative" 
-              class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded-md text-sm"
-            >
-              Lancer Initiative
-            </button>
-            <button 
-              @click="monsterStore.startEditingMonster(monsterId)" 
-              class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm"
-            >
-              Modifier
-            </button>
-          </div>
+          <button 
+            @click="rollInitiative" 
+            class="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded-md text-xs sm:text-sm"
+          >
+            <span class="sm:hidden">Initiative</span>
+            <span class="hidden sm:inline">Lancer Initiative</span>
+          </button>
         </div>
         
         <!-- Stats Panel -->
@@ -426,13 +439,13 @@ onUnmounted(() => {
           <div class="flex space-x-2">
             <button 
               @click="cancelEditing" 
-              class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-3 py-1 rounded-md text-sm"
+              class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-2 sm:px-3 py-1 rounded-md text-xs sm:text-sm"
             >
               Annuler
             </button>
             <button 
               @click="saveChanges" 
-              class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md text-sm"
+              class="bg-green-600 hover:bg-green-700 text-white px-2 sm:px-3 py-1 rounded-md text-xs sm:text-sm"
             >
               Enregistrer
             </button>
@@ -440,13 +453,8 @@ onUnmounted(() => {
         </div>
       </div>
       
-      <div v-if="!isEditing" class="flex justify-end space-x-2 mt-4">
-        <button 
-          @click="monsterStore.removeMonster(monsterId)" 
-          class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-sm"
-        >
-          Supprimer
-        </button>
+      <div v-if="!isEditing" class="flex justify-between mt-4">
+        <!-- Le bouton "Gérer les états" a été supprimé car il était redondant -->
       </div>
     </div>
   </div>

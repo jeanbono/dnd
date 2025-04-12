@@ -51,121 +51,122 @@ function resetForm() {
 </script>
 
 <template>
-  <div class="bg-gray-100 p-4 rounded-md mb-6">
-    <h3 class="font-semibold mb-3">Ajouter un Monstre</h3>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <div class="bg-gray-100 p-3 sm:p-4 rounded-md mb-4 sm:mb-6">
+    <h3 class="font-semibold mb-2 sm:mb-3 text-base sm:text-lg">Ajouter un Monstre</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
       <div>
-        <label class="block text-sm font-medium mb-1">Nom</label>
+        <label class="block text-xs sm:text-sm font-medium mb-1">Nom</label>
         <input 
           v-model="monsterData.name" 
           type="text" 
-          class="w-full p-2 border border-gray-300 rounded-md"
+          class="w-full p-1.5 sm:p-2 border border-gray-300 rounded-md text-sm"
         >
       </div>
       <div>
-        <label class="block text-sm font-medium mb-1">Initiative</label>
+        <label class="block text-xs sm:text-sm font-medium mb-1">Initiative</label>
         <input 
           v-model.number="monsterData.initiative" 
           type="number" 
-          class="w-full p-2 border border-gray-300 rounded-md"
+          class="w-full p-1.5 sm:p-2 border border-gray-300 rounded-md text-sm"
         >
       </div>
       <div>
-        <label class="block text-sm font-medium mb-1">Points de Vie</label>
+        <label class="block text-xs sm:text-sm font-medium mb-1">PV</label>
         <input 
           v-model.number="monsterData.hp" 
           type="number" 
-          class="w-full p-2 border border-gray-300 rounded-md"
+          class="w-full p-1.5 sm:p-2 border border-gray-300 rounded-md text-sm"
         >
       </div>
       <div>
-        <label class="block text-sm font-medium mb-1">Points de Vie Max</label>
+        <label class="block text-xs sm:text-sm font-medium mb-1">PV Max</label>
         <input 
           v-model.number="monsterData.maxHp" 
           type="number" 
-          class="w-full p-2 border border-gray-300 rounded-md"
+          class="w-full p-1.5 sm:p-2 border border-gray-300 rounded-md text-sm"
         >
       </div>
       <div>
-        <label class="block text-sm font-medium mb-1">Classe d'Armure</label>
+        <label class="block text-xs sm:text-sm font-medium mb-1">CA</label>
         <input 
           v-model.number="monsterData.ac" 
           type="number" 
-          class="w-full p-2 border border-gray-300 rounded-md"
+          class="w-full p-1.5 sm:p-2 border border-gray-300 rounded-md text-sm"
         >
       </div>
     </div>
     
-    <h4 class="font-semibold mt-4 mb-2">Caractéristiques</h4>
-    <div class="grid grid-cols-2 md:grid-cols-6 gap-2">
+    <h4 class="font-semibold mt-3 sm:mt-4 mb-1 sm:mb-2 text-sm sm:text-base">Caractéristiques</h4>
+    <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
       <div>
-        <label class="block text-sm font-medium mb-1">FOR</label>
+        <label class="block text-xs sm:text-sm font-medium mb-1">FOR</label>
         <input 
           v-model.number="monsterData.strength" 
           type="number" 
-          class="w-full p-2 border border-gray-300 rounded-md"
+          class="w-full p-1.5 sm:p-2 border border-gray-300 rounded-md text-sm"
         >
       </div>
       <div>
-        <label class="block text-sm font-medium mb-1">DEX</label>
+        <label class="block text-xs sm:text-sm font-medium mb-1">DEX</label>
         <input 
           v-model.number="monsterData.dexterity" 
           type="number" 
-          class="w-full p-2 border border-gray-300 rounded-md"
+          class="w-full p-1.5 sm:p-2 border border-gray-300 rounded-md text-sm"
         >
       </div>
       <div>
-        <label class="block text-sm font-medium mb-1">CON</label>
+        <label class="block text-xs sm:text-sm font-medium mb-1">CON</label>
         <input 
           v-model.number="monsterData.constitution" 
           type="number" 
-          class="w-full p-2 border border-gray-300 rounded-md"
+          class="w-full p-1.5 sm:p-2 border border-gray-300 rounded-md text-sm"
         >
       </div>
       <div>
-        <label class="block text-sm font-medium mb-1">INT</label>
+        <label class="block text-xs sm:text-sm font-medium mb-1">INT</label>
         <input 
           v-model.number="monsterData.intelligence" 
           type="number" 
-          class="w-full p-2 border border-gray-300 rounded-md"
+          class="w-full p-1.5 sm:p-2 border border-gray-300 rounded-md text-sm"
         >
       </div>
       <div>
-        <label class="block text-sm font-medium mb-1">SAG</label>
+        <label class="block text-xs sm:text-sm font-medium mb-1">SAG</label>
         <input 
           v-model.number="monsterData.wisdom" 
           type="number" 
-          class="w-full p-2 border border-gray-300 rounded-md"
+          class="w-full p-1.5 sm:p-2 border border-gray-300 rounded-md text-sm"
         >
       </div>
       <div>
-        <label class="block text-sm font-medium mb-1">CHA</label>
+        <label class="block text-xs sm:text-sm font-medium mb-1">CHA</label>
         <input 
           v-model.number="monsterData.charisma" 
           type="number" 
-          class="w-full p-2 border border-gray-300 rounded-md"
+          class="w-full p-1.5 sm:p-2 border border-gray-300 rounded-md text-sm"
         >
       </div>
     </div>
     
-    <div class="mt-4">
-      <label class="block text-sm font-medium mb-1">Notes</label>
+    <div class="mt-3 sm:mt-4">
+      <label class="block text-xs sm:text-sm font-medium mb-1">Notes</label>
       <textarea 
         v-model="monsterData.notes" 
-        class="w-full p-2 border border-gray-300 rounded-md h-24"
+        class="w-full p-1.5 sm:p-2 border border-gray-300 rounded-md h-16 sm:h-24 text-sm"
       ></textarea>
     </div>
     
-    <div class="flex space-x-2 mt-4">
+    <div class="flex flex-wrap gap-2 mt-3 sm:mt-4">
       <button 
         @click="handleSubmit" 
-        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md cursor-pointer"
+        class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm flex-grow sm:flex-grow-0"
       >
-        Ajouter le Monstre
+        <span class="sm:hidden">+ Monstre</span>
+        <span class="hidden sm:inline">Ajouter le Monstre</span>
       </button>
       <button 
         @click="handleCancel" 
-        class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md cursor-pointer"
+        class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm"
       >
         Annuler
       </button>

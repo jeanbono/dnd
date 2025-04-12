@@ -50,27 +50,30 @@ function rollAllInitiatives() {
 </script>
 
 <template>
-  <div class="flex justify-between items-center mb-4">
-    <h2 class="text-2xl font-bold">Monstres</h2>
-    <div class="flex space-x-2">
+  <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 gap-2 sm:gap-0">
+    <h2 class="text-xl sm:text-2xl font-bold">Monstres</h2>
+    <div class="flex flex-wrap gap-2">
       <button 
         @click="monsterStore.toggleAddingMonster()" 
-        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md"
+        class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-sm sm:text-base flex-grow sm:flex-grow-0"
         v-if="!monsterStore.isAddingMonster"
       >
-        Ajouter un Monstre
+        <span class="sm:hidden">+ Monstre</span>
+        <span class="hidden sm:inline">Ajouter un Monstre</span>
       </button>
       <button 
         @click="showMonsterSearch = !showMonsterSearch" 
-        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+        class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-sm sm:text-base flex-grow sm:flex-grow-0"
       >
-        {{ showMonsterSearch ? 'Masquer la Recherche' : 'Rechercher un Monstre' }}
+        <span class="sm:hidden">{{ showMonsterSearch ? 'Masquer' : 'Rechercher' }}</span>
+        <span class="hidden sm:inline">{{ showMonsterSearch ? 'Masquer la Recherche' : 'Rechercher un Monstre' }}</span>
       </button>
       <button 
         @click="rollAllInitiatives" 
-        class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md"
+        class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-sm sm:text-base flex-grow sm:flex-grow-0"
       >
-        ⚄ Initiative pour Tous
+        <span class="sm:hidden">⚄ Initiative</span>
+        <span class="hidden sm:inline">⚄ Initiative pour Tous</span>
       </button>
     </div>
   </div>

@@ -115,16 +115,19 @@ const conditionEffects = computed(() => {
     {{ badgeText }}
     
     <!-- Tooltip avec les effets de la condition -->
-    <div class="absolute left-1/2 bottom-full mb-2 hidden group-hover:block z-10 transform -translate-x-1/2">
-      <div class="bg-gray-800 text-white text-xs rounded p-2 shadow-lg" style="min-width: 200px; max-width: 300px;">
+    <div class="absolute bottom-full left-0 mb-2 hidden group-hover:block" style="z-index: 9999;">
+      <div class="bg-gray-800 text-white text-xs rounded p-2 shadow-lg" style="min-width: 300px; max-width: 350px;">
         <div class="font-semibold mb-1">{{ props.condition.label }}{{ props.level ? ` (niveau ${props.level})` : '' }} :</div>
         <ul class="list-disc pl-4">
           <li v-for="(effect, index) in conditionEffects" :key="index" class="mb-1">
             {{ effect }}
           </li>
         </ul>
-        <div class="absolute left-1/2 top-full transform -translate-x-1/2 -translate-y-1/2 rotate-45 w-2 h-2 bg-gray-800"></div>
+        <div class="absolute left-4 top-full transform -translate-y-1/2 rotate-45 w-2 h-2 bg-gray-800"></div>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+</style>
