@@ -50,7 +50,19 @@ const initiativeOrder = computed(() => {
 
 // Fonction pour déterminer si une créature a un désavantage aux jets d'attaque
 function hasDisadvantageOnAttacks(character: any) {
-  return character.conditions && character.conditions.length > 0 && hasDisadvantage(character.conditions);
+  // Vérifier si le personnage a des conditions
+  if (!character.conditions || character.conditions.length === 0) {
+    return false;
+  }
+  
+  // Vérifier s'il y a une condition d'épuisement de niveau 3 ou plus
+  const exhaustionCondition = character.conditions.find(c => c.condition.id === 'exhaustion');
+  if (exhaustionCondition && exhaustionCondition.level >= 3) {
+    return true;
+  }
+  
+  // Vérifier les autres conditions qui donnent un désavantage
+  return hasDisadvantage(character.conditions);
 }
 
 // Fonction pour obtenir le modificateur de dextérité (pour les joueurs)
@@ -80,7 +92,7 @@ function formatConditionsList(conditions: any[] | undefined) {
   return conditions.map(c => {
     const name = c.condition.label;
     // Vérifier si la condition est l'épuisement et si elle a un niveau
-    if (c.condition.id === 1 && c.level !== undefined) {
+    if (c.condition.id === 'exhaustion' && c.level !== undefined) {
       return `${name} (niveau ${c.level})`;
     }
     return name;

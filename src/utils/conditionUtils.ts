@@ -119,14 +119,14 @@ export function getConditionDescription(conditionWithLevel: ConditionWithLevel):
  * Vérifie si une condition est active pour une créature
  */
 export function hasCondition(conditions: ConditionWithLevel[], condition: ConditionData): boolean {
-  return conditions.some(c => c.condition === condition);
+  return conditions.some(c => c.condition.id === condition.id);
 }
 
 /**
  * Obtient le niveau d'épuisement d'une créature (0 si aucun)
  */
 export function getExhaustionLevel(conditions: ConditionWithLevel[]): number {
-  const exhaustion = conditions.find(c => c.condition === Condition.EXHAUSTION);
+  const exhaustion = conditions.find(c => c.condition.id === Condition.EXHAUSTION.id);
   return exhaustion?.level || 0;
 }
 
