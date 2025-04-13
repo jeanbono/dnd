@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from 'vue';
-import { createPopper, type Instance } from '@popperjs/core';
+import { createPopper, type Instance, type Placement } from '@popperjs/core';
 
 const props = defineProps({
   placement: {
-    type: String,
+    type: String as () => Placement,
     default: 'top',
     validator: (value: string) => [
       'top', 'top-start', 'top-end', 
