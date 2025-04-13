@@ -208,12 +208,6 @@ export const useMonsterStore = defineStore('monsters', () => {
     return results;
   }
   
-  function addMonsterFromTemp() {
-    // Cette fonction n'est plus nécessaire car nous n'utilisons plus tempMonsterData
-    // Elle est conservée pour compatibilité mais devrait être remplacée par addMonster
-    console.warn('addMonsterFromTemp is deprecated, use addMonster instead');
-  }
-  
   function getMonsterById(id: string): Monster | undefined {
     return monsters.value.find(monster => monster.id === id);
   }
@@ -434,7 +428,6 @@ export const useMonsterStore = defineStore('monsters', () => {
     updateMonsterHp,
     removeMonster,
     addMonsterFromApi,
-    addMonsterFromTemp,
     getMonsterById,
     searchMonsters,
     rollInitiative,

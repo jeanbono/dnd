@@ -70,10 +70,13 @@ function rollAllInitiatives() {
       </button>
       <button 
         @click="rollAllInitiatives" 
-        class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-sm sm:text-base flex-grow sm:flex-grow-0"
+        class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm flex items-center"
       >
-        <span class="sm:hidden">⚄ Initiative</span>
-        <span class="hidden sm:inline">⚄ Initiative pour Tous</span>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+        </svg>
+        <span class="sm:hidden inline-block align-middle">Roll</span>
+        <span class="hidden sm:inline-block align-middle">Lancer toutes les initiatives</span>
       </button>
     </div>
   </div>

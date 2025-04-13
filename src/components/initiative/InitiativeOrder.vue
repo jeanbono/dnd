@@ -322,6 +322,21 @@ function getConditionDetails(conditionWithLevel: any): { title: string; effects?
   
   return { title, effects };
 }
+
+// Fonction pour lancer l'initiative de tous les monstres
+function rollAllMonsterInitiatives() {
+  monsterStore.rollAllInitiatives();
+  
+  // On pourrait ajouter ici un feedback visuel temporaire
+  // pour montrer que les initiatives ont été lancées
+  const initiativeList = initiativeListRef.value;
+  if (initiativeList) {
+    initiativeList.classList.add('highlight-rolled');
+    setTimeout(() => {
+      initiativeList.classList.remove('highlight-rolled');
+    }, 1000);
+  }
+}
 </script>
 
 <template>
@@ -341,15 +356,17 @@ function getConditionDetails(conditionWithLevel: any): { title: string; effects?
       </div>
     </div>
 
-    <!-- Header avec boutons -->
+    <!-- Header avec boutons de navigation du tour -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3 sm:gap-0">
       <h2 class="text-xl font-semibold">Ordre d'Initiative</h2>
-      <div class="flex flex-wrap items-center gap-2 sm:space-x-3 w-full sm:w-auto">
+      
+      <!-- Boutons de navigation du tour avec leurs icônes originales -->
+      <div class="flex items-center gap-2 sm:space-x-3 w-full sm:w-auto">
         <button 
           @click="nextTurn()" 
-          class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-1.5 sm:py-2 px-3 sm:px-4 rounded-md flex items-center text-xs sm:text-base flex-1 sm:flex-auto justify-center"
+          class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm flex items-center justify-center w-1/2 sm:w-auto"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
           </svg>
           <span class="sm:hidden">Tour +</span>
@@ -357,13 +374,12 @@ function getConditionDetails(conditionWithLevel: any): { title: string; effects?
         </button>
         <button 
           @click="startNewCombat" 
-          class="bg-red-600 hover:bg-red-700 text-white py-1.5 sm:py-2 px-3 sm:px-4 rounded-md shadow transition-all duration-200 hover:shadow-lg flex items-center text-xs sm:text-base flex-1 sm:flex-auto justify-center"
+          class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm flex items-center justify-center w-1/2 sm:w-auto"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
-          <span class="sm:hidden">Nouveau</span>
-          <span class="hidden sm:inline">Nouveau combat</span>
+          <span>Nouveau combat</span>
         </button>
       </div>
     </div>
@@ -380,8 +396,22 @@ function getConditionDetails(conditionWithLevel: any): { title: string; effects?
         
         <!-- Liste d'initiative principale -->
         <div class="mb-6">
-          <h3 class="text-xl font-semibold mb-4">Ordre d'initiative</h3>
-          
+          <div class="flex justify-between items-center mb-4 flex-col sm:flex-row w-full">
+            <h3 class="text-lg font-semibold mb-2 sm:mb-0">Ordre d'initiative</h3>
+            
+            <button 
+                @click="rollAllMonsterInitiatives()" 
+                class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm flex items-center w-full sm:w-auto justify-center sm:justify-start"
+                :title="'Lancer l\'initiative pour tous les monstres'"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+                <span class="sm:hidden inline-block align-middle">Roll initiatives</span>
+                <span class="hidden sm:inline-block align-middle">Lancer les initiatives</span>
+              </button>
+          </div>
+      
           <!-- Conteneur pour le drag & drop -->
           <div ref="initiativeListRef" class="initiative-list space-y-2 border-2 border-dashed border-gray-300 p-4 rounded-lg">
             <!-- Message quand la liste est vide -->
@@ -442,7 +472,7 @@ function getConditionDetails(conditionWithLevel: any): { title: string; effects?
                               :title="character.type === 'player' ? 'Les attaques contre ce personnage ont un avantage' : 'Les attaques contre ce monstre ont un avantage'">
                           <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                          </svg>
+                        </svg>
                         </span>
                       </div>
                       
@@ -646,6 +676,7 @@ function getConditionDetails(conditionWithLevel: any): { title: string; effects?
   border-color: rgba(124, 58, 237, 0.5);
 }
 
+/* Animation pour mettre en surbrillance les éléments */
 .highlight-element {
   animation: highlight-pulse 2s ease-in-out;
 }
@@ -677,5 +708,25 @@ function getConditionDetails(conditionWithLevel: any): { title: string; effects?
 .current-turn {
   border-left: 4px solid #7c3aed;
   background-color: rgba(124, 58, 237, 0.1);
+}
+
+/* Style global pour les boutons */
+button {
+  transition: all 0.2s ease;
+}
+
+button:active {
+  transform: scale(0.97);
+}
+
+/* Animation pour le roll d'initiatives */
+.highlight-rolled {
+  animation: highlight-roll 1s ease-in-out;
+}
+
+@keyframes highlight-roll {
+  0% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7); }
+  50% { box-shadow: 0 0 0 6px rgba(139, 92, 246, 0.3); }
+  100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); }
 }
 </style>
