@@ -110,11 +110,14 @@ const conditionEffects = computed(() => {
 <template>
   <Tooltip placement="top" :offset-distance="10">
     <div 
-      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mr-2 mb-1 cursor-pointer hover:opacity-80"
+      class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium mr-2 mb-1 cursor-pointer hover:opacity-80 shadow-sm transition-all duration-200 hover:shadow"
       :class="[badgeColor, textColor]"
       @click="removeCondition"
     >
-      {{ badgeText }}
+      <span class="mr-1">{{ badgeText }}</span>
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
     </div>
     
     <template #content>
@@ -131,4 +134,8 @@ const conditionEffects = computed(() => {
 </template>
 
 <style scoped>
+/* Animation subtile au survol */
+div[class*="inline-flex"]:hover {
+  transform: translateY(-1px);
+}
 </style>

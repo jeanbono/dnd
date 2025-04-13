@@ -149,9 +149,9 @@ onUnmounted(() => {
       <div class="relative inline-block">
         <button 
           @click.stop="toggleAddMenu"
-          class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium text-blue-500 bg-blue-50 border border-blue-200 mr-2 mb-1 hover:bg-blue-100"
+          class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium shadow-sm transition-all duration-200 bg-purple-100 text-purple-800 hover:bg-purple-200 hover:shadow mr-2 mb-1"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
           </svg>
           Ajouter un état
