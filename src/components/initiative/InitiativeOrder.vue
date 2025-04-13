@@ -5,7 +5,8 @@ import { useMonsterStore } from '@/stores/monster';
 import { usePlayerStore } from '@/stores/player';
 import { useDialogStore } from '@/stores/dialog';
 import NewCombatDialog from '@/components/initiative/NewCombatDialog.vue';
-import ConditionTooltip from '@/components/conditions/ConditionTooltip.vue';
+import Tooltip from '@/components/common/Tooltip.vue';
+import { Condition, getConditionEffects } from '@/utils/conditionUtils';
 import Sortable from "sortablejs";
 
 // Stores
@@ -298,6 +299,29 @@ function hasAdvantageAgainstAttacks(character: any): boolean {
 function startNewCombat() {
   dialogStore.openNewCombatDialog();
 }
+
+// Fonction pour obtenir les détails d'une condition (remplace la fonction dans ConditionTooltip)
+function getConditionDetails(conditionWithLevel: any): { title: string; effects?: string[] } {
+  const conditionId = conditionWithLevel.condition.id;
+  let title = '';
+  
+  // Trouver le titre de la condition
+  Object.values(Condition).forEach(c => {
+    if (c.id === conditionId) {
+      title = c.label;
+    }
+  });
+  
+  // Ajouter le niveau pour l'épuisement
+  if (conditionId === 'exhaustion' && conditionWithLevel.level) {
+    title = `${title} (niveau ${conditionWithLevel.level})`;
+  }
+  
+  // Obtenir les effets depuis le référentiel de conditions
+  const effects = getConditionEffects(conditionWithLevel);
+  
+  return { title, effects };
+}
 </script>
 
 <template>
@@ -404,9 +428,26 @@ function startNewCombat() {
                 
                 <!-- Compteur d'états -->
                 <div v-if="character.conditions && character.conditions.length > 0" 
-                     class="relative flex items-center justify-center h-6 w-6 rounded-full bg-purple-100 text-purple-800 text-xs font-bold cursor-help group">
-                  {{ character.conditions.length }}
-                  <ConditionTooltip :character="character" />
+                     class="relative flex items-center justify-center h-6 w-6 rounded-full bg-purple-100 text-purple-800 text-xs font-bold cursor-help">
+                  <Tooltip placement="top" :offset-distance="10">
+                    {{ character.conditions.length }}
+                    
+                    <template #content>
+                      <div class="bg-gray-800 text-white text-xs rounded p-2" style="min-width: 200px; max-width: 300px;">
+                        <div class="font-semibold mb-1">États actifs :</div>
+                        <div class="grid grid-cols-1 gap-2">
+                          <div v-for="condition in character.conditions" :key="condition.condition.id" class="mb-2">
+                            <div class="font-medium text-blue-300">{{ getConditionDetails(condition).title }}</div>
+                            <ul v-if="getConditionDetails(condition).effects" class="list-disc pl-4 mt-1 text-gray-300 text-xs">
+                              <li v-for="(effect, index) in getConditionDetails(condition).effects" :key="index" class="mb-1">
+                                {{ effect }}
+                              </li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    </template>
+                  </Tooltip>
                 </div>
               </div>
             </div>
@@ -468,9 +509,26 @@ function startNewCombat() {
                 
                 <!-- Compteur d'états -->
                 <div v-if="character.conditions && character.conditions.length > 0" 
-                     class="relative flex items-center justify-center h-6 w-6 rounded-full bg-purple-100 text-purple-800 text-xs font-bold cursor-help group">
-                  {{ character.conditions.length }}
-                  <ConditionTooltip :character="character" />
+                     class="relative flex items-center justify-center h-6 w-6 rounded-full bg-purple-100 text-purple-800 text-xs font-bold cursor-help">
+                  <Tooltip placement="top" :offset-distance="10">
+                    {{ character.conditions.length }}
+                    
+                    <template #content>
+                      <div class="bg-gray-800 text-white text-xs rounded p-2" style="min-width: 200px; max-width: 300px;">
+                        <div class="font-semibold mb-1">États actifs :</div>
+                        <div class="grid grid-cols-1 gap-2">
+                          <div v-for="condition in character.conditions" :key="condition.condition.id" class="mb-2">
+                            <div class="font-medium text-blue-300">{{ getConditionDetails(condition).title }}</div>
+                            <ul v-if="getConditionDetails(condition).effects" class="list-disc pl-4 mt-1 text-gray-300 text-xs">
+                              <li v-for="(effect, index) in getConditionDetails(condition).effects" :key="index" class="mb-1">
+                                {{ effect }}
+                              </li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    </template>
+                  </Tooltip>
                 </div>
               </div>
             </div>

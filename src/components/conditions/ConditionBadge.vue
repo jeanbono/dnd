@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { Condition, getConditionEffects, type ConditionData, type ConditionWithLevel } from '@/utils/conditionUtils';
 import { useMonsterStore } from '@/stores/monster';
 import { usePlayerStore } from '@/stores/player';
+import Tooltip from '@/components/common/Tooltip.vue';
 
 const props = defineProps<{
   condition: ConditionData;
@@ -107,26 +108,26 @@ const conditionEffects = computed(() => {
 </script>
 
 <template>
-  <div 
-    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium relative group mr-2 mb-1 cursor-pointer hover:opacity-80"
-    :class="[badgeColor, textColor]"
-    @click="removeCondition"
-  >
-    {{ badgeText }}
+  <Tooltip placement="top" :offset-distance="10">
+    <div 
+      class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mr-2 mb-1 cursor-pointer hover:opacity-80"
+      :class="[badgeColor, textColor]"
+      @click="removeCondition"
+    >
+      {{ badgeText }}
+    </div>
     
-    <!-- Tooltip avec les effets de la condition -->
-    <div class="absolute bottom-full left-0 mb-2 hidden group-hover:block" style="z-index: 9999;">
-      <div class="bg-gray-800 text-white text-xs rounded p-2 shadow-lg" style="min-width: 300px; max-width: 350px;">
+    <template #content>
+      <div class="bg-gray-800 text-white text-xs rounded p-2">
         <div class="font-semibold mb-1">{{ props.condition.label }}{{ props.level ? ` (niveau ${props.level})` : '' }} :</div>
         <ul class="list-disc pl-4">
           <li v-for="(effect, index) in conditionEffects" :key="index" class="mb-1">
             {{ effect }}
           </li>
         </ul>
-        <div class="absolute left-4 top-full transform -translate-y-1/2 rotate-45 w-2 h-2 bg-gray-800"></div>
       </div>
-    </div>
-  </div>
+    </template>
+  </Tooltip>
 </template>
 
 <style scoped>
