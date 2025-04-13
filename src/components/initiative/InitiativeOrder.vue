@@ -408,16 +408,61 @@ function getConditionDetails(conditionWithLevel: any): { title: string; effects?
                   <div class="flex-grow">
                     <div class="flex items-center flex-wrap">
                       <span class="font-medium mr-1">{{ character.name }}</span>
-                      <span v-if="hasDisadvantageOnAttacks(character)" 
-                            class="mr-1 mt-1 px-1.5 py-0.5 text-xs font-semibold bg-red-100 text-red-800 rounded-full" 
-                            :title="character.type === 'player' ? 'Ce personnage a un désavantage aux jets d\'attaque' : 'Ce monstre a un désavantage aux jets d\'attaque'">
-                        Désavantage
-                      </span>
-                      <span v-if="hasAdvantageAgainstAttacks(character)" 
-                            class="mr-1 mt-1 px-1.5 py-0.5 text-xs font-semibold bg-green-100 text-green-800 rounded-full" 
-                            :title="character.type === 'player' ? 'Les attaques contre ce personnage ont un avantage' : 'Les attaques contre ce monstre ont un avantage'">
-                        Avantage contre
-                      </span>
+                      <!-- Badges pour écrans moyens et larges -->
+                      <div class="hidden md:flex flex-wrap items-center gap-1">
+                        <span v-if="hasDisadvantageOnAttacks(character)" 
+                              class="inline-flex items-center px-1.5 py-0.5 rounded-md text-xs font-medium bg-red-50 text-red-700 border border-red-200 shadow-sm" 
+                              :title="character.type === 'player' ? 'Ce personnage a un désavantage aux jets d\'attaque' : 'Ce monstre a un désavantage aux jets d\'attaque'">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-0.5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                          </svg>
+                          Désavantage
+                        </span>
+                        <span v-if="hasAdvantageAgainstAttacks(character)" 
+                              class="inline-flex items-center px-1.5 py-0.5 rounded-md text-xs font-medium bg-green-50 text-green-700 border border-green-200 shadow-sm" 
+                              :title="character.type === 'player' ? 'Les attaques contre ce personnage ont un avantage' : 'Les attaques contre ce monstre ont un avantage'">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-0.5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                          </svg>
+                          Avantage contre
+                        </span>
+                      </div>
+                      
+                      <!-- Version intermédiaire pour tablettes -->
+                      <div class="hidden sm:flex md:hidden flex-wrap items-center gap-1">
+                        <span v-if="hasDisadvantageOnAttacks(character)" 
+                              class="inline-flex items-center px-1.5 py-0.5 rounded-md text-xs font-medium bg-red-50 text-red-700 border border-red-200 shadow-sm" 
+                              :title="character.type === 'player' ? 'Ce personnage a un désavantage aux jets d\'attaque' : 'Ce monstre a un désavantage aux jets d\'attaque'">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                          </svg>
+                        </span>
+                        <span v-if="hasAdvantageAgainstAttacks(character)" 
+                              class="inline-flex items-center px-1.5 py-0.5 rounded-md text-xs font-medium bg-green-50 text-green-700 border border-green-200 shadow-sm" 
+                              :title="character.type === 'player' ? 'Les attaques contre ce personnage ont un avantage' : 'Les attaques contre ce monstre ont un avantage'">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                          </svg>
+                        </span>
+                      </div>
+                      
+                      <!-- Badges compacts pour écrans très étroits -->
+                      <div class="flex sm:hidden flex-wrap items-center gap-1">
+                        <span v-if="hasDisadvantageOnAttacks(character)" 
+                              class="inline-flex items-center px-1 py-0.5 rounded-md text-xs font-medium bg-red-50 text-red-700 border border-red-200 shadow-sm" 
+                              :title="character.type === 'player' ? 'Ce personnage a un désavantage aux jets d\'attaque' : 'Ce monstre a un désavantage aux jets d\'attaque'">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                          </svg>
+                        </span>
+                        <span v-if="hasAdvantageAgainstAttacks(character)" 
+                              class="inline-flex items-center px-1 py-0.5 rounded-md text-xs font-medium bg-green-50 text-green-700 border border-green-200 shadow-sm" 
+                              :title="character.type === 'player' ? 'Les attaques contre ce personnage ont un avantage' : 'Les attaques contre ce monstre ont un avantage'">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                          </svg>
+                        </span>
+                      </div>
                     </div>
                     <div class="text-sm text-gray-600">
                       <span>Initiative : {{ character.initiative }}</span>
@@ -427,28 +472,30 @@ function getConditionDetails(conditionWithLevel: any): { title: string; effects?
                 </div>
                 
                 <!-- Compteur d'états -->
-                <div v-if="character.conditions && character.conditions.length > 0" 
-                     class="relative flex items-center justify-center h-6 w-6 rounded-full bg-purple-100 text-purple-800 text-xs font-bold cursor-help">
-                  <Tooltip placement="top" :offset-distance="10">
+                <Tooltip placement="top" :offset-distance="10">
+                  <div 
+                    class="relative flex items-center justify-center h-6 w-6 rounded-full bg-purple-100 text-purple-800 text-xs font-bold cursor-help"
+                    v-if="character.conditions && character.conditions.length > 0"
+                  >
                     {{ character.conditions.length }}
-                    
-                    <template #content>
-                      <div class="bg-gray-800 text-white text-xs rounded p-2" style="min-width: 200px; max-width: 300px;">
-                        <div class="font-semibold mb-1">États actifs :</div>
-                        <div class="grid grid-cols-1 gap-2">
-                          <div v-for="condition in character.conditions" :key="condition.condition.id" class="mb-2">
-                            <div class="font-medium text-blue-300">{{ getConditionDetails(condition).title }}</div>
-                            <ul v-if="getConditionDetails(condition).effects" class="list-disc pl-4 mt-1 text-gray-300 text-xs">
-                              <li v-for="(effect, index) in getConditionDetails(condition).effects" :key="index" class="mb-1">
-                                {{ effect }}
-                              </li>
-                            </ul>
-                          </div>
+                  </div>
+                  
+                  <template #content>
+                    <div class="bg-gray-800 text-white text-xs rounded p-2" style="min-width: 200px; max-width: 300px;">
+                      <div class="font-semibold mb-1">États actifs :</div>
+                      <div class="grid grid-cols-1 gap-2">
+                        <div v-for="condition in character.conditions" :key="condition.condition.id" class="mb-2">
+                          <div class="font-medium text-blue-300">{{ getConditionDetails(condition).title }}</div>
+                          <ul v-if="getConditionDetails(condition).effects" class="list-disc pl-4 mt-1 text-gray-300 text-xs">
+                            <li v-for="(effect, index) in getConditionDetails(condition).effects" :key="index" class="mb-1">
+                              {{ effect }}
+                            </li>
+                          </ul>
                         </div>
                       </div>
-                    </template>
-                  </Tooltip>
-                </div>
+                    </div>
+                  </template>
+                </Tooltip>
               </div>
             </div>
           </div>
@@ -489,16 +536,61 @@ function getConditionDetails(conditionWithLevel: any): { title: string; effects?
                   <div class="flex-grow">
                     <div class="flex items-center flex-wrap">
                       <span class="font-medium mr-1">{{ character.name }}</span>
-                      <span v-if="hasDisadvantageOnAttacks(character)" 
-                            class="mr-1 mt-1 px-1.5 py-0.5 text-xs font-semibold bg-red-100 text-red-800 rounded-full" 
-                            :title="character.type === 'player' ? 'Ce personnage a un désavantage aux jets d\'attaque' : 'Ce monstre a un désavantage aux jets d\'attaque'">
-                        Désavantage
-                      </span>
-                      <span v-if="hasAdvantageAgainstAttacks(character)" 
-                            class="mr-1 mt-1 px-1.5 py-0.5 text-xs font-semibold bg-green-100 text-green-800 rounded-full" 
-                            :title="character.type === 'player' ? 'Les attaques contre ce personnage ont un avantage' : 'Les attaques contre ce monstre ont un avantage'">
-                        Avantage contre
-                      </span>
+                      <!-- Badges pour écrans moyens et larges -->
+                      <div class="hidden md:flex flex-wrap items-center gap-1">
+                        <span v-if="hasDisadvantageOnAttacks(character)" 
+                              class="inline-flex items-center px-1.5 py-0.5 rounded-md text-xs font-medium bg-red-50 text-red-700 border border-red-200 shadow-sm" 
+                              :title="character.type === 'player' ? 'Ce personnage a un désavantage aux jets d\'attaque' : 'Ce monstre a un désavantage aux jets d\'attaque'">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-0.5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                          </svg>
+                          Désavantage
+                        </span>
+                        <span v-if="hasAdvantageAgainstAttacks(character)" 
+                              class="inline-flex items-center px-1.5 py-0.5 rounded-md text-xs font-medium bg-green-50 text-green-700 border border-green-200 shadow-sm" 
+                              :title="character.type === 'player' ? 'Les attaques contre ce personnage ont un avantage' : 'Les attaques contre ce monstre ont un avantage'">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-0.5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                          </svg>
+                          Avantage contre
+                        </span>
+                      </div>
+                      
+                      <!-- Version intermédiaire pour tablettes -->
+                      <div class="hidden sm:flex md:hidden flex-wrap items-center gap-1">
+                        <span v-if="hasDisadvantageOnAttacks(character)" 
+                              class="inline-flex items-center px-1.5 py-0.5 rounded-md text-xs font-medium bg-red-50 text-red-700 border border-red-200 shadow-sm" 
+                              :title="character.type === 'player' ? 'Ce personnage a un désavantage aux jets d\'attaque' : 'Ce monstre a un désavantage aux jets d\'attaque'">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                          </svg>
+                        </span>
+                        <span v-if="hasAdvantageAgainstAttacks(character)" 
+                              class="inline-flex items-center px-1.5 py-0.5 rounded-md text-xs font-medium bg-green-50 text-green-700 border border-green-200 shadow-sm" 
+                              :title="character.type === 'player' ? 'Les attaques contre ce personnage ont un avantage' : 'Les attaques contre ce monstre ont un avantage'">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                          </svg>
+                        </span>
+                      </div>
+                      
+                      <!-- Badges compacts pour écrans très étroits -->
+                      <div class="flex sm:hidden flex-wrap items-center gap-1">
+                        <span v-if="hasDisadvantageOnAttacks(character)" 
+                              class="inline-flex items-center px-1 py-0.5 rounded-md text-xs font-medium bg-red-50 text-red-700 border border-red-200 shadow-sm" 
+                              :title="character.type === 'player' ? 'Ce personnage a un désavantage aux jets d\'attaque' : 'Ce monstre a un désavantage aux jets d\'attaque'">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                          </svg>
+                        </span>
+                        <span v-if="hasAdvantageAgainstAttacks(character)" 
+                              class="inline-flex items-center px-1 py-0.5 rounded-md text-xs font-medium bg-green-50 text-green-700 border border-green-200 shadow-sm" 
+                              :title="character.type === 'player' ? 'Les attaques contre ce personnage ont un avantage' : 'Les attaques contre ce monstre ont un avantage'">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                          </svg>
+                        </span>
+                      </div>
                     </div>
                     <div class="text-sm text-gray-600">
                       <span>Initiative : {{ character.initiative }}</span>
@@ -508,28 +600,30 @@ function getConditionDetails(conditionWithLevel: any): { title: string; effects?
                 </div>
                 
                 <!-- Compteur d'états -->
-                <div v-if="character.conditions && character.conditions.length > 0" 
-                     class="relative flex items-center justify-center h-6 w-6 rounded-full bg-purple-100 text-purple-800 text-xs font-bold cursor-help">
-                  <Tooltip placement="top" :offset-distance="10">
+                <Tooltip placement="top" :offset-distance="10">
+                  <div 
+                    class="relative flex items-center justify-center h-6 w-6 rounded-full bg-purple-100 text-purple-800 text-xs font-bold cursor-help"
+                    v-if="character.conditions && character.conditions.length > 0"
+                  >
                     {{ character.conditions.length }}
-                    
-                    <template #content>
-                      <div class="bg-gray-800 text-white text-xs rounded p-2" style="min-width: 200px; max-width: 300px;">
-                        <div class="font-semibold mb-1">États actifs :</div>
-                        <div class="grid grid-cols-1 gap-2">
-                          <div v-for="condition in character.conditions" :key="condition.condition.id" class="mb-2">
-                            <div class="font-medium text-blue-300">{{ getConditionDetails(condition).title }}</div>
-                            <ul v-if="getConditionDetails(condition).effects" class="list-disc pl-4 mt-1 text-gray-300 text-xs">
-                              <li v-for="(effect, index) in getConditionDetails(condition).effects" :key="index" class="mb-1">
-                                {{ effect }}
-                              </li>
-                            </ul>
-                          </div>
+                  </div>
+                  
+                  <template #content>
+                    <div class="bg-gray-800 text-white text-xs rounded p-2" style="min-width: 200px; max-width: 300px;">
+                      <div class="font-semibold mb-1">États actifs :</div>
+                      <div class="grid grid-cols-1 gap-2">
+                        <div v-for="condition in character.conditions" :key="condition.condition.id" class="mb-2">
+                          <div class="font-medium text-blue-300">{{ getConditionDetails(condition).title }}</div>
+                          <ul v-if="getConditionDetails(condition).effects" class="list-disc pl-4 mt-1 text-gray-300 text-xs">
+                            <li v-for="(effect, index) in getConditionDetails(condition).effects" :key="index" class="mb-1">
+                              {{ effect }}
+                            </li>
+                          </ul>
                         </div>
                       </div>
-                    </template>
-                  </Tooltip>
-                </div>
+                    </div>
+                  </template>
+                </Tooltip>
               </div>
             </div>
           </div>
