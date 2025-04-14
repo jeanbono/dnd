@@ -357,11 +357,9 @@ function rollAllMonsterInitiatives() {
     </div>
 
     <!-- Header avec boutons de navigation du tour -->
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3 sm:gap-0">
-      <h2 class="text-xl font-semibold">Ordre d'Initiative</h2>
-      
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3 sm:gap-0">      
       <!-- Boutons de navigation du tour avec leurs icônes originales -->
-      <div class="flex items-center gap-2 sm:space-x-3 w-full sm:w-auto">
+      <div class="flex items-center gap-2 sm:space-x-3 w-full sm:w-auto sm:mx-auto">
         <button 
           @click="nextTurn()" 
           class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm flex items-center justify-center w-1/2 sm:w-auto"
@@ -397,7 +395,7 @@ function rollAllMonsterInitiatives() {
         <!-- Liste d'initiative principale -->
         <div class="mb-6">
           <div class="flex justify-between items-center mb-4 flex-col sm:flex-row w-full">
-            <h3 class="text-lg font-semibold mb-2 sm:mb-0 self-start">Ordre d'initiative</h3>
+            <h2 class="text-lg font-semibold mb-2 sm:mb-0 self-start">Ordre d'initiative</h2>
             
             <button 
                 @click="rollAllMonsterInitiatives()" 
@@ -465,7 +463,7 @@ function rollAllMonsterInitiatives() {
                               :title="character.type === 'player' ? 'Ce personnage a un désavantage aux jets d\'attaque' : 'Ce monstre a un désavantage aux jets d\'attaque'">
                           <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
                             <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                          </svg>
+                        </svg>
                         </span>
                         <span v-if="hasAdvantageAgainstAttacks(character)" 
                               class="inline-flex items-center px-1.5 py-0.5 rounded-md text-xs font-medium bg-green-50 text-green-700 border border-green-200 shadow-sm" 
