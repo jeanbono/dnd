@@ -12,6 +12,11 @@ export interface Player {
   maxHp?: number;
   ac: number;
   dexterity: number;
+  strength?: number;
+  constitution?: number;
+  intelligence?: number;
+  wisdom?: number;
+  charisma?: number;
   notes: string;
   conditions: { condition: ConditionData; level?: number; duration?: number }[];
 }
@@ -38,6 +43,11 @@ export const usePlayerStore = defineStore('player', () => {
       maxHp: playerData.maxHp,
       ac: playerData.ac !== undefined ? playerData.ac : 10,
       dexterity: playerData.dexterity || 10,
+      strength: playerData.strength,
+      constitution: playerData.constitution,
+      intelligence: playerData.intelligence,
+      wisdom: playerData.wisdom,
+      charisma: playerData.charisma,
       notes: playerData.notes || '',
       conditions: playerData.conditions || []
     };

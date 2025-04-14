@@ -12,6 +12,18 @@ export function calculateAbilityModifier(score: number): number {
 }
 
 /**
+ * Calcule et formate le modificateur d'une caractéristique
+ * @param score Valeur de la caractéristique
+ * @returns Le modificateur formaté (ex: "+3" ou "-1")
+ */
+export function getFormattedModifier(score: number | undefined): string {
+  if (score === undefined || score === null) return '-';
+  
+  const mod = calculateAbilityModifier(score);
+  return mod >= 0 ? `+${mod}` : `${mod}`;
+}
+
+/**
  * Formate l'affichage d'une caractéristique avec son modificateur
  * @param score Valeur de la caractéristique
  * @returns Chaîne formatée (ex: "14 (+2)" ou "—" si undefined)

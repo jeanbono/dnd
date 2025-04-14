@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { usePlayerStore } from '@/stores/player';
+import { isValidNumber } from '@/utils/validationUtils';
 
 const playerStore = usePlayerStore();
 
@@ -11,22 +12,40 @@ const playerData = ref({
   hp: undefined,
   maxHp: undefined,
   ac: 10,
-  dexterity: undefined as number | undefined, // Dextérité vide par défaut
+  // Toutes les caractéristiques de D&D
+  strength: undefined as number | undefined,
+  dexterity: undefined as number | undefined,
+  constitution: undefined as number | undefined,
+  intelligence: undefined as number | undefined,
+  wisdom: undefined as number | undefined,
+  charisma: undefined as number | undefined,
   notes: '',
   conditions: []
 });
 
 const formSubmitted = ref(false);
+
+// Référence pour les inputs numériques
 const initiativeInput = ref<HTMLInputElement | null>(null);
+const strengthInput = ref<HTMLInputElement | null>(null);
 const dexterityInput = ref<HTMLInputElement | null>(null);
+const constitutionInput = ref<HTMLInputElement | null>(null);
+const intelligenceInput = ref<HTMLInputElement | null>(null);
+const wisdomInput = ref<HTMLInputElement | null>(null);
+const charismaInput = ref<HTMLInputElement | null>(null);
 
 function handleSubmit() {
   formSubmitted.value = true;
-  // Vérifier que le nom, l'initiative et la dextérité sont remplis
+  // Vérifier que tous les champs obligatoires sont remplis
   if (
     playerData.value.name && 
-    initiativeInput.value && initiativeInput.value.value !== '' &&
-    dexterityInput.value && dexterityInput.value.value !== ''
+    isValidNumber(playerData.value.initiative) &&
+    isValidNumber(playerData.value.strength) &&
+    isValidNumber(playerData.value.dexterity) &&
+    isValidNumber(playerData.value.constitution) &&
+    isValidNumber(playerData.value.intelligence) &&
+    isValidNumber(playerData.value.wisdom) &&
+    isValidNumber(playerData.value.charisma)
   ) {
     // S'assurer que tous les champs requis sont présents avec des valeurs par défaut si nécessaire
     const completePlayerData = {
@@ -35,13 +54,30 @@ function handleSubmit() {
       hp: playerData.value.hp !== undefined ? playerData.value.hp : undefined,
       maxHp: playerData.value.maxHp !== undefined ? playerData.value.maxHp : undefined,
       ac: playerData.value.ac ?? 10,
-      dexterity: playerData.value.dexterity || 0, // Utiliser 0 comme valeur par défaut si undefined
+      // Inclure toutes les caractéristiques
+      strength: playerData.value.strength || 10,
+      dexterity: playerData.value.dexterity || 10,
+      constitution: playerData.value.constitution || 10,
+      intelligence: playerData.value.intelligence || 10,
+      wisdom: playerData.value.wisdom || 10,
+      charisma: playerData.value.charisma || 10,
       notes: playerData.value.notes ?? '',
       conditions: playerData.value.conditions ?? []
     };
     
     playerStore.addPlayer(completePlayerData);
     resetForm();
+  } else {
+    console.log("Validation échouée: champs obligatoires manquants", {
+      name: !!playerData.value.name,
+      initiative: isValidNumber(playerData.value.initiative),
+      strength: isValidNumber(playerData.value.strength),
+      dexterity: isValidNumber(playerData.value.dexterity),
+      constitution: isValidNumber(playerData.value.constitution),
+      intelligence: isValidNumber(playerData.value.intelligence),
+      wisdom: isValidNumber(playerData.value.wisdom),
+      charisma: isValidNumber(playerData.value.charisma)
+    });
   }
 }
 
@@ -57,7 +93,12 @@ function resetForm() {
     hp: undefined,
     maxHp: undefined,
     ac: 10,
+    strength: undefined,
     dexterity: undefined,
+    constitution: undefined,
+    intelligence: undefined,
+    wisdom: undefined,
+    charisma: undefined,
     notes: '',
     conditions: []
   };
@@ -82,9 +123,6 @@ function resetForm() {
           :class="{ 'border-red-500 bg-red-50': playerData.name === '' && formSubmitted, 'border-gray-300': !(playerData.name === '' && formSubmitted) }"
           required
         >
-        <p v-if="playerData.name === '' && formSubmitted" class="mt-0.5 text-xs text-red-500">
-          Le nom est obligatoire
-        </p>
       </div>
       <div>
         <label class="block text-xs sm:text-sm font-medium mb-1">
@@ -98,25 +136,79 @@ function resetForm() {
           ref="initiativeInput"
           required
         >
-        <p v-if="formSubmitted && initiativeInput && initiativeInput.value === ''" class="mt-0.5 text-xs text-red-500">
-          L'initiative est obligatoire
-        </p>
       </div>
-      <div>
-        <label class="block text-xs sm:text-sm font-medium mb-1">
-          Dextérité <span class="text-red-500">*</span>
-        </label>
-        <input 
-          v-model.number="playerData.dexterity" 
-          type="number" 
-          class="w-full p-1.5 sm:p-2 border rounded-md text-sm"
-          :class="{ 'border-red-500 bg-red-50': formSubmitted && dexterityInput && dexterityInput.value === '', 'border-gray-300': !(formSubmitted && dexterityInput && dexterityInput.value === '') }"
-          ref="dexterityInput"
-          required
-        >
-        <p v-if="formSubmitted && dexterityInput && dexterityInput.value === ''" class="mt-0.5 text-xs text-red-500">
-          La dextérité est obligatoire
-        </p>
+    </div>
+    
+    <!-- Caractéristiques -->
+    <div class="bg-gray-50 p-3 rounded-md border border-gray-200 mb-3">
+      <h3 class="text-sm font-medium mb-2">Caractéristiques</h3>
+      <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
+        <div>
+          <label class="block text-xs font-medium mb-1">Force <span class="text-red-500">*</span></label>
+          <input 
+            v-model.number="playerData.strength" 
+            type="number" 
+            class="w-full p-1.5 border rounded-md text-sm"
+            :class="{ 'border-red-500 bg-red-50': formSubmitted && strengthInput && strengthInput.value === '', 'border-gray-300': !(formSubmitted && strengthInput && strengthInput.value === '') }"
+            required
+            ref="strengthInput"
+          >
+        </div>
+        <div>
+          <label class="block text-xs font-medium mb-1">Dextérité <span class="text-red-500">*</span></label>
+          <input 
+            v-model.number="playerData.dexterity" 
+            type="number" 
+            class="w-full p-1.5 border rounded-md text-sm"
+            :class="{ 'border-red-500 bg-red-50': formSubmitted && dexterityInput && dexterityInput.value === '', 'border-gray-300': !(formSubmitted && dexterityInput && dexterityInput.value === '') }"
+            required
+            ref="dexterityInput"
+          >
+        </div>
+        <div>
+          <label class="block text-xs font-medium mb-1">Constitution <span class="text-red-500">*</span></label>
+          <input 
+            v-model.number="playerData.constitution" 
+            type="number" 
+            class="w-full p-1.5 border rounded-md text-sm"
+            :class="{ 'border-red-500 bg-red-50': formSubmitted && constitutionInput && constitutionInput.value === '', 'border-gray-300': !(formSubmitted && constitutionInput && constitutionInput.value === '') }"
+            required
+            ref="constitutionInput"
+          >
+        </div>
+        <div>
+          <label class="block text-xs font-medium mb-1">Intelligence <span class="text-red-500">*</span></label>
+          <input 
+            v-model.number="playerData.intelligence" 
+            type="number" 
+            class="w-full p-1.5 border rounded-md text-sm"
+            :class="{ 'border-red-500 bg-red-50': formSubmitted && intelligenceInput && intelligenceInput.value === '', 'border-gray-300': !(formSubmitted && intelligenceInput && intelligenceInput.value === '') }"
+            required
+            ref="intelligenceInput"
+          >
+        </div>
+        <div>
+          <label class="block text-xs font-medium mb-1">Sagesse <span class="text-red-500">*</span></label>
+          <input 
+            v-model.number="playerData.wisdom" 
+            type="number" 
+            class="w-full p-1.5 border rounded-md text-sm"
+            :class="{ 'border-red-500 bg-red-50': formSubmitted && wisdomInput && wisdomInput.value === '', 'border-gray-300': !(formSubmitted && wisdomInput && wisdomInput.value === '') }"
+            required
+            ref="wisdomInput"
+          >
+        </div>
+        <div>
+          <label class="block text-xs font-medium mb-1">Charisme <span class="text-red-500">*</span></label>
+          <input 
+            v-model.number="playerData.charisma" 
+            type="number" 
+            class="w-full p-1.5 border rounded-md text-sm"
+            :class="{ 'border-red-500 bg-red-50': formSubmitted && charismaInput && charismaInput.value === '', 'border-gray-300': !(formSubmitted && charismaInput && charismaInput.value === '') }"
+            required
+            ref="charismaInput"
+          >
+        </div>
       </div>
     </div>
     
