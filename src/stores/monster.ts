@@ -127,8 +127,8 @@ export const useMonsterStore = defineStore('monsters', () => {
     }
   }
   
-  function updateMonsterHp(id: string, change: number) {
-    const monster = monsters.value.find(m => m.id === id);
+  function updateMonsterHp(monsterId: string, change: number) {
+    const monster = monsters.value.find(m => m.id === monsterId);
     if (monster) {
       monster.hp = Math.max(0, Math.min(monster.maxHp, monster.hp + change));
     }
@@ -180,7 +180,7 @@ export const useMonsterStore = defineStore('monsters', () => {
     
     // Roll d20
     const roll = Math.floor(Math.random() * 20) + 1;
-    const total = roll + dexMod;
+    const total = Math.max(1, roll + dexMod);
     
     // Update monster initiative
     updateMonster(id, { initiative: total });

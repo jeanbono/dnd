@@ -142,7 +142,7 @@ function resetForm() {
 function rollInitiative() {
   // Lancer un d20 pour l'initiative
   const roll = Math.floor(Math.random() * 20) + 1;
-  formData.value.initiative = roll + dexModifier.value;
+  formData.value.initiative = Math.max(1, roll + dexModifier.value);
 }
 </script>
 

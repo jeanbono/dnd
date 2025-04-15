@@ -118,7 +118,9 @@ const isExpanded = computed(() => {
   }
 });
 
-// Actions
+// État local pour le résultat du lancer d'initiative
+const showInitiativeResult = ref(false);
+
 function cancelEditing() {
   if (props.characterType === 'player') {
     playerStore.cancelEditingPlayer();
@@ -198,8 +200,17 @@ function toggleExpand() {
 }
 
 function rollInitiative() {
-  if (props.characterType === 'monster') {
+  if (props.characterType === 'monster' && character.value) {
+    // Appel direct au store pour faire le lancer
     monsterStore.rollInitiative(props.characterId);
+    
+    // Afficher brièvement la confirmation de mise à jour
+    showInitiativeResult.value = true;
+    
+    // Masquer après quelques secondes
+    setTimeout(() => {
+      showInitiativeResult.value = false;
+    }, 2000);
   }
 }
 
@@ -227,6 +238,34 @@ function startEditing() {
   }
 }
 </script>
+
+<style scoped>
+.initiative-updated {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  background-color: rgba(124, 58, 237, 0.1);
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.initiative-updated::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, rgba(124, 58, 237, 0), rgba(124, 58, 237, 0.3), rgba(124, 58, 237, 0));
+  animation: shine 1.5s ease-in-out infinite;
+}
+
+@keyframes shine {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+</style>
 
 <template>
   <div v-if="character" class="bg-white rounded-md shadow border border-gray-200 p-4" 
@@ -350,19 +389,29 @@ function startEditing() {
       
       <!-- Contenu étendu -->
       <div v-if="isExpanded">
-        <!-- Bouton de lancer d'initiative pour les monstres -->
-        <div v-if="characterType === 'monster'" class="flex justify-between items-center gap-2 mb-2">
+        <!-- Animation simple du lancer d'initiative -->
+        <div v-if="characterType === 'monster'" class="flex items-center mb-3">
+          <!-- Bouton de lancer d'initiative -->
           <button 
             @click="rollInitiative" 
-            class="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded-md text-xs sm:text-sm flex items-center"
+            class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-md text-sm flex items-center"
+            :class="{ 'opacity-50 cursor-not-allowed': showInitiativeResult }"
+            :disabled="showInitiativeResult"
             title="Lancer l'initiative"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
             </svg>
-            <span class="sm:hidden inline-block align-middle">Roll</span>
-            <span class="hidden sm:inline-block align-middle">Lancer Initiative</span>
+            <span>Lancer Initiative</span>
           </button>
+          
+          <!-- Affichage du résultat du lancer sur la même ligne -->
+          <div v-if="showInitiativeResult" class="ml-3">
+            <div class="initiative-updated">
+              <span class="font-medium mr-2">{{ character.initiative }}</span>
+              <span class="text-sm text-purple-700">Nouvelle initiative</span>
+            </div>
+          </div>
         </div>
       
         <!-- Statistiques du personnage -->
