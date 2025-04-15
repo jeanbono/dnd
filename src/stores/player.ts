@@ -10,7 +10,7 @@ export interface Player {
   initiative: number;
   hp?: number;
   maxHp?: number;
-  ac: number;
+  ac?: number;
   dexterity: number;
   strength?: number;
   constitution?: number;
@@ -39,11 +39,11 @@ export const usePlayerStore = defineStore('player', () => {
     // Create default player data
     const defaultData: Omit<Player, 'id'> = {
       name: playerData.name || '',
-      initiative: playerData.initiative || 0,
+      initiative: playerData.initiative,
       hp: playerData.hp,
       maxHp: playerData.maxHp,
-      ac: playerData.ac !== undefined ? playerData.ac : 10,
-      dexterity: playerData.dexterity || 10,
+      ac: playerData.ac,
+      dexterity: playerData.dexterity,
       strength: playerData.strength,
       constitution: playerData.constitution,
       intelligence: playerData.intelligence,

@@ -85,7 +85,7 @@ const onSubmit = handleSubmit((formValues) => {
     initiative: Number(formValues.initiative),
     hp: formValues.hp !== null ? Number(formValues.hp) : undefined,
     maxHp: formValues.maxHp !== null ? Number(formValues.maxHp) : undefined,
-    ac: Number(formValues.ac),
+    ac: formValues.ac !== null ? Number(formValues.ac) : undefined,
     dexterity: Number(formValues.dexterity),
     strength: Number(formValues.strength),
     constitution: Number(formValues.constitution),
@@ -158,7 +158,9 @@ function rollInitiative() {
         </div>
         
         <div>
-          <label class="block text-sm font-medium mb-1">Initiative</label>
+          <label class="block text-sm font-medium mb-1">
+            Initiative <span class="text-red-500">*</span>
+          </label>
           <div class="flex">
             <Field 
               name="initiative" 
@@ -207,7 +209,7 @@ function rollInitiative() {
         </div>
         
         <div>
-          <label class="block text-sm font-medium mb-1">Classe d'Armure <span class="text-red-500">*</span></label>
+          <label class="block text-sm font-medium mb-1">Classe d'Armure <span class="text-gray-400 text-xs">(opt.)</span></label>
           <Field 
             name="ac" 
             type="number" 
