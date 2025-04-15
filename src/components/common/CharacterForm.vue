@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
 import { usePlayerStore } from '@/stores/player';
 import { useMonsterStore } from '@/stores/monster';
-import { isValidNumber } from '@/utils/validationUtils';
 import { calculateAbilityModifier } from '@/utils/abilityUtils';
+import { useForm, Field, ErrorMessage } from 'vee-validate';
+import * as yup from 'yup';
 
 const props = defineProps<{
   characterType?: 'player' | 'monster';
@@ -16,13 +17,51 @@ const monsterStore = useMonsterStore();
 // Determinant le type de personnage
 const characterType = computed(() => props.characterType || 'player');
 
-// Données de formulaire
-const formData = ref({
+// Définition du schéma de validation avec yup
+const validationSchema = yup.object({
+  name: yup.string().required('Le nom est requis'),
+  initiative: yup.number()
+    .typeError('L\'initiative doit être un nombre')
+    .required('L\'initiative est requise'),
+  hp: yup.number().nullable().transform((value) => (isNaN(value) ? null : value))
+    .typeError('Les points de vie doivent être un nombre'),
+  maxHp: yup.number().nullable().transform((value) => (isNaN(value) ? null : value))
+    .typeError('Les PV maximum doivent être un nombre'),
+  ac: yup.number().nullable().transform((value) => (isNaN(value) ? null : value)),
+  dexterity: yup.number()
+    .typeError('La dextérité doit être un nombre')
+    .required('La dextérité est requise')
+    .min(1, 'Doit être au moins 1'),
+  strength: yup.number()
+    .typeError('La force doit être un nombre')
+    .required('La force est requise')
+    .min(1, 'Doit être au moins 1'),
+  constitution: yup.number()
+    .typeError('La constitution doit être un nombre')
+    .required('La constitution est requise')
+    .min(1, 'Doit être au moins 1'),
+  intelligence: yup.number()
+    .typeError('L\'intelligence doit être un nombre')
+    .required('L\'intelligence est requise')
+    .min(1, 'Doit être au moins 1'),
+  wisdom: yup.number()
+    .typeError('La sagesse doit être un nombre')
+    .required('La sagesse est requise')
+    .min(1, 'Doit être au moins 1'),
+  charisma: yup.number()
+    .typeError('Le charisme doit être un nombre')
+    .required('Le charisme est requis')
+    .min(1, 'Doit être au moins 1'),
+  notes: yup.string()
+});
+
+// Valeurs initiales pour le formulaire
+const initialValues = {
   name: props.initialData?.name || '',
   initiative: props.initialData?.initiative || 0,
-  hp: props.initialData?.hp,
-  maxHp: props.initialData?.maxHp,
-  ac: props.initialData?.ac || 10,
+  hp: props.initialData?.hp || null,
+  maxHp: props.initialData?.maxHp || null,
+  ac: props.initialData?.ac || null,
   dexterity: props.initialData?.dexterity || 10,
   strength: props.initialData?.strength || 10,
   constitution: props.initialData?.constitution || 10,
@@ -30,87 +69,53 @@ const formData = ref({
   wisdom: props.initialData?.wisdom || 10,
   charisma: props.initialData?.charisma || 10,
   notes: props.initialData?.notes || ''
+};
+
+// Initialisation du formulaire avec vee-validate
+const { handleSubmit, resetForm, values, errors, setFieldValue } = useForm({
+  validationSchema,
+  initialValues
 });
 
-// État de validation
-const formSubmitted = ref(false);
-const nameInput = ref<HTMLInputElement | null>(null);
-const dexterityInput = ref<HTMLInputElement | null>(null);
-const strengthInput = ref<HTMLInputElement | null>(null);
-const constitutionInput = ref<HTMLInputElement | null>(null);
-const intelligenceInput = ref<HTMLInputElement | null>(null);
-const wisdomInput = ref<HTMLInputElement | null>(null);
-const charismaInput = ref<HTMLInputElement | null>(null);
+// Gestionnaire de soumission
+const onSubmit = handleSubmit((formValues) => {
+  // Conversion des valeurs en nombre où nécessaire
+  const processedValues = {
+    ...formValues,
+    initiative: Number(formValues.initiative),
+    hp: formValues.hp !== null ? Number(formValues.hp) : undefined,
+    maxHp: formValues.maxHp !== null ? Number(formValues.maxHp) : undefined,
+    ac: Number(formValues.ac),
+    dexterity: Number(formValues.dexterity),
+    strength: Number(formValues.strength),
+    constitution: Number(formValues.constitution),
+    intelligence: Number(formValues.intelligence),
+    wisdom: Number(formValues.wisdom),
+    charisma: Number(formValues.charisma)
+  };
+
+  // Ajouter le personnage au store approprié
+  if (characterType.value === 'player') {
+    playerStore.addPlayer({
+      ...processedValues,
+      conditions: []
+    });
+    playerStore.cancelAddingPlayer();
+  } else {
+    monsterStore.addMonster({
+      ...processedValues,
+      conditions: []
+    });
+    monsterStore.toggleAddingMonster();
+  }
+  
+  // Réinitialiser le formulaire
+  resetForm();
+});
 
 // Getters pour l'interface
-const dexModifier = computed(() => calculateAbilityModifier(formData.value.dexterity));
+const dexModifier = computed(() => calculateAbilityModifier(Number(values.dexterity)));
 const initiativeModifier = computed(() => dexModifier.value);
-
-// Actions
-function submitForm() {
-  formSubmitted.value = true;
-  
-  // Vérification que tous les champs obligatoires sont remplis
-  if (
-    formData.value.name && 
-    isValidNumber(formData.value.dexterity) &&
-    isValidNumber(formData.value.strength) &&
-    isValidNumber(formData.value.constitution) &&
-    isValidNumber(formData.value.intelligence) &&
-    isValidNumber(formData.value.wisdom) &&
-    isValidNumber(formData.value.charisma)
-  ) {
-    // Ajouter le personnage au store approprié
-    if (characterType.value === 'player') {
-      playerStore.addPlayer({
-        name: formData.value.name,
-        initiative: formData.value.initiative,
-        hp: formData.value.hp,
-        maxHp: formData.value.maxHp,
-        ac: formData.value.ac,
-        dexterity: formData.value.dexterity,
-        strength: formData.value.strength,
-        constitution: formData.value.constitution,
-        intelligence: formData.value.intelligence,
-        wisdom: formData.value.wisdom,
-        charisma: formData.value.charisma,
-        notes: formData.value.notes,
-        conditions: []
-      });
-      playerStore.cancelAddingPlayer();
-    } else {
-      monsterStore.addMonster({
-        name: formData.value.name,
-        initiative: formData.value.initiative,
-        hp: formData.value.hp,
-        maxHp: formData.value.maxHp,
-        ac: formData.value.ac,
-        dexterity: formData.value.dexterity,
-        strength: formData.value.strength,
-        constitution: formData.value.constitution,
-        intelligence: formData.value.intelligence,
-        wisdom: formData.value.wisdom,
-        charisma: formData.value.charisma,
-        notes: formData.value.notes,
-        conditions: []
-      });
-      monsterStore.toggleAddingMonster();
-    }
-    
-    // Réinitialiser le formulaire
-    resetForm();
-  } else {
-    console.log("Validation échouée: champs obligatoires manquants", {
-      name: !!formData.value.name,
-      dexterity: isValidNumber(formData.value.dexterity),
-      strength: isValidNumber(formData.value.strength),
-      constitution: isValidNumber(formData.value.constitution),
-      intelligence: isValidNumber(formData.value.intelligence),
-      wisdom: isValidNumber(formData.value.wisdom),
-      charisma: isValidNumber(formData.value.charisma)
-    });
-  }
-}
 
 function cancelForm() {
   if (characterType.value === 'player') {
@@ -121,28 +126,10 @@ function cancelForm() {
   resetForm();
 }
 
-function resetForm() {
-  formData.value = {
-    name: '',
-    initiative: 0,
-    hp: undefined,
-    maxHp: undefined,
-    ac: 10,
-    dexterity: 10,
-    strength: 10,
-    constitution: 10,
-    intelligence: 10,
-    wisdom: 10,
-    charisma: 10,
-    notes: ''
-  };
-  formSubmitted.value = false;
-}
-
 function rollInitiative() {
   // Lancer un d20 pour l'initiative
   const roll = Math.floor(Math.random() * 20) + 1;
-  formData.value.initiative = Math.max(1, roll + dexModifier.value);
+  setFieldValue('initiative', Math.max(1, roll + dexModifier.value));
 }
 </script>
 
@@ -153,36 +140,32 @@ function rollInitiative() {
       <p class="text-sm text-gray-500">Remplissez le formulaire pour ajouter un {{ characterType === 'player' ? 'joueur' : 'monstre' }} à votre rencontre</p>
     </div>
     
-    <form @submit.prevent="submitForm" class="space-y-4">
+    <form @submit.prevent="onSubmit" class="space-y-4">
       <!-- Nom et Initiative -->
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label class="block text-sm font-medium mb-1">
             Nom <span class="text-red-500">*</span>
           </label>
-          <div>
-            <input 
-              v-model="formData.name" 
-              type="text" 
-              class="w-full p-2 border rounded-md"
-              :class="{ 'border-red-500 bg-red-50': formData.name === '' && formSubmitted, 'border-gray-300': !(formData.name === '' && formSubmitted) }"
-              ref="nameInput"
-              autofocus
-              required
-            >
-            <p v-if="formData.name === '' && formSubmitted" class="mt-1 text-sm text-red-500">Le nom est requis</p>
-          </div>
+          <Field 
+            name="name" 
+            type="text" 
+            class="w-full p-2 border rounded-md"
+            :class="{ 'border-red-500 bg-red-50': errors.name, 'border-gray-300': !errors.name }"
+            autofocus
+          />
+          <ErrorMessage name="name" class="mt-1 text-sm text-red-500" />
         </div>
         
         <div>
           <label class="block text-sm font-medium mb-1">Initiative</label>
           <div class="flex">
-            <input 
-              v-model.number="formData.initiative" 
+            <Field 
+              name="initiative" 
               type="number" 
-              class="w-full p-2 border border-gray-300 rounded-l-md"
-              required
-            >
+              class="w-full p-2 border rounded-l-md"
+              :class="{ 'border-red-500 bg-red-50': errors.initiative, 'border-gray-300': !errors.initiative }"
+            />
             <button 
               type="button" 
               @click="rollInitiative" 
@@ -194,6 +177,7 @@ function rollInitiative() {
               </svg>
             </button>
           </div>
+          <ErrorMessage name="initiative" class="mt-1 text-sm text-red-500" />
           <p class="mt-1 text-xs text-gray-500">Modificateur d'initiative: {{ initiativeModifier >= 0 ? '+' + initiativeModifier : initiativeModifier }}</p>
         </div>
       </div>
@@ -202,29 +186,35 @@ function rollInitiative() {
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div>
           <label class="block text-sm font-medium mb-1">Points de Vie <span class="text-gray-400 text-xs">(opt.)</span></label>
-          <input 
-            v-model.number="formData.hp" 
+          <Field 
+            name="hp" 
             type="number" 
-            class="w-full p-2 border border-gray-300 rounded-md"
-          >
+            class="w-full p-2 border rounded-md"
+            :class="{ 'border-red-500 bg-red-50': errors.hp, 'border-gray-300': !errors.hp }"
+          />
+          <ErrorMessage name="hp" class="mt-1 text-sm text-red-500" />
         </div>
         
         <div>
           <label class="block text-sm font-medium mb-1">PV Maximum <span class="text-gray-400 text-xs">(opt.)</span></label>
-          <input 
-            v-model.number="formData.maxHp" 
+          <Field 
+            name="maxHp" 
             type="number" 
-            class="w-full p-2 border border-gray-300 rounded-md"
-          >
+            class="w-full p-2 border rounded-md"
+            :class="{ 'border-red-500 bg-red-50': errors.maxHp, 'border-gray-300': !errors.maxHp }"
+          />
+          <ErrorMessage name="maxHp" class="mt-1 text-sm text-red-500" />
         </div>
         
         <div>
-          <label class="block text-sm font-medium mb-1">Classe d'Armure</label>
-          <input 
-            v-model.number="formData.ac" 
+          <label class="block text-sm font-medium mb-1">Classe d'Armure <span class="text-red-500">*</span></label>
+          <Field 
+            name="ac" 
             type="number" 
-            class="w-full p-2 border border-gray-300 rounded-md"
-          >
+            class="w-full p-2 border rounded-md"
+            :class="{ 'border-red-500 bg-red-50': errors.ac, 'border-gray-300': !errors.ac }"
+          />
+          <ErrorMessage name="ac" class="mt-1 text-sm text-red-500" />
         </div>
       </div>
       
@@ -236,79 +226,73 @@ function rollInitiative() {
             <label class="block text-xs font-medium mb-1">
               Force <span class="text-red-500">*</span>
             </label>
-            <input 
-              v-model.number="formData.strength" 
+            <Field 
+              name="strength" 
               type="number" 
               class="w-full p-2 border rounded-md"
-              :class="{ 'border-red-500 bg-red-50': formSubmitted && strengthInput && strengthInput.value === '', 'border-gray-300': !(formSubmitted && strengthInput && strengthInput.value === '') }"
-              ref="strengthInput"
-              required
-            >
+              :class="{ 'border-red-500 bg-red-50': errors.strength, 'border-gray-300': !errors.strength }"
+            />
+            <ErrorMessage name="strength" class="mt-1 text-sm text-red-500" />
           </div>
           <div>
             <label class="block text-xs font-medium mb-1">
               Dextérité <span class="text-red-500">*</span>
             </label>
-            <input 
-              v-model.number="formData.dexterity" 
+            <Field 
+              name="dexterity" 
               type="number" 
               class="w-full p-2 border rounded-md"
-              :class="{ 'border-red-500 bg-red-50': formSubmitted && dexterityInput && dexterityInput.value === '', 'border-gray-300': !(formSubmitted && dexterityInput && dexterityInput.value === '') }"
-              ref="dexterityInput"
-              required
-            >
+              :class="{ 'border-red-500 bg-red-50': errors.dexterity, 'border-gray-300': !errors.dexterity }"
+            />
+            <ErrorMessage name="dexterity" class="mt-1 text-sm text-red-500" />
           </div>
           <div>
             <label class="block text-xs font-medium mb-1">
               Constitution <span class="text-red-500">*</span>
             </label>
-            <input 
-              v-model.number="formData.constitution" 
+            <Field 
+              name="constitution" 
               type="number" 
               class="w-full p-2 border rounded-md"
-              :class="{ 'border-red-500 bg-red-50': formSubmitted && constitutionInput && constitutionInput.value === '', 'border-gray-300': !(formSubmitted && constitutionInput && constitutionInput.value === '') }"
-              ref="constitutionInput"
-              required
-            >
+              :class="{ 'border-red-500 bg-red-50': errors.constitution, 'border-gray-300': !errors.constitution }"
+            />
+            <ErrorMessage name="constitution" class="mt-1 text-sm text-red-500" />
           </div>
           <div>
             <label class="block text-xs font-medium mb-1">
               Intelligence <span class="text-red-500">*</span>
             </label>
-            <input 
-              v-model.number="formData.intelligence" 
+            <Field 
+              name="intelligence" 
               type="number" 
               class="w-full p-2 border rounded-md"
-              :class="{ 'border-red-500 bg-red-50': formSubmitted && intelligenceInput && intelligenceInput.value === '', 'border-gray-300': !(formSubmitted && intelligenceInput && intelligenceInput.value === '') }"
-              ref="intelligenceInput"
-              required
-            >
+              :class="{ 'border-red-500 bg-red-50': errors.intelligence, 'border-gray-300': !errors.intelligence }"
+            />
+            <ErrorMessage name="intelligence" class="mt-1 text-sm text-red-500" />
           </div>
           <div>
             <label class="block text-xs font-medium mb-1">
               Sagesse <span class="text-red-500">*</span>
             </label>
-            <input 
-              v-model.number="formData.wisdom" 
+            <Field 
+              name="wisdom" 
               type="number" 
               class="w-full p-2 border rounded-md"
-              :class="{ 'border-red-500 bg-red-50': formSubmitted && wisdomInput && wisdomInput.value === '', 'border-gray-300': !(formSubmitted && wisdomInput && wisdomInput.value === '') }"
-              ref="wisdomInput"
-              required
-            >
+              :class="{ 'border-red-500 bg-red-50': errors.wisdom, 'border-gray-300': !errors.wisdom }"
+            />
+            <ErrorMessage name="wisdom" class="mt-1 text-sm text-red-500" />
           </div>
           <div>
             <label class="block text-xs font-medium mb-1">
               Charisme <span class="text-red-500">*</span>
             </label>
-            <input 
-              v-model.number="formData.charisma" 
+            <Field 
+              name="charisma" 
               type="number" 
               class="w-full p-2 border rounded-md"
-              :class="{ 'border-red-500 bg-red-50': formSubmitted && charismaInput && charismaInput.value === '', 'border-gray-300': !(formSubmitted && charismaInput && charismaInput.value === '') }"
-              ref="charismaInput"
-              required
-            >
+              :class="{ 'border-red-500 bg-red-50': errors.charisma, 'border-gray-300': !errors.charisma }"
+            />
+            <ErrorMessage name="charisma" class="mt-1 text-sm text-red-500" />
           </div>
         </div>
       </div>
@@ -316,12 +300,15 @@ function rollInitiative() {
       <!-- Notes -->
       <div>
         <label class="block text-sm font-medium mb-1">Notes</label>
-        <textarea 
-          v-model="formData.notes" 
+        <Field 
+          as="textarea" 
+          name="notes" 
           rows="3" 
-          class="w-full p-2 border border-gray-300 rounded-md"
+          class="w-full p-2 border rounded-md"
+          :class="{ 'border-red-500 bg-red-50': errors.notes, 'border-gray-300': !errors.notes }"
           placeholder="Ajoutez des notes supplémentaires ici..."
-        ></textarea>
+        />
+        <ErrorMessage name="notes" class="mt-1 text-sm text-red-500" />
       </div>
       
       <!-- Boutons -->

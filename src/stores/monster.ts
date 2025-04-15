@@ -9,18 +9,18 @@ export interface Monster {
   id: string;
   name: string;
   initiative: number;
-  hp: number;
-  maxHp: number;
-  ac: number;
-  notes: string;
+  hp?: number;
+  maxHp?: number;
+  ac?: number;
+  notes?: string;
   apiId?: string;
   // Caractéristiques
-  strength?: number;
-  dexterity?: number;
-  constitution?: number;
-  intelligence?: number;
-  wisdom?: number;
-  charisma?: number;
+  strength: number;
+  dexterity: number;
+  constitution: number;
+  intelligence: number;
+  wisdom: number;
+  charisma: number;
   // Conditions/États
   conditions: { condition: ConditionData; duration?: number; level?: number }[];
 }
@@ -86,8 +86,8 @@ export const useMonsterStore = defineStore('monsters', () => {
       initiative: monsterData.initiative || 0,
       hp: monsterData.hp || 10,
       maxHp: monsterData.maxHp || 10,
-      ac: monsterData.ac || 10,
-      notes: monsterData.notes || '',
+      ac: monsterData.ac,
+      notes: monsterData.notes,
       strength: monsterData.strength,
       dexterity: monsterData.dexterity,
       constitution: monsterData.constitution,
@@ -129,7 +129,7 @@ export const useMonsterStore = defineStore('monsters', () => {
   
   function updateMonsterHp(monsterId: string, change: number) {
     const monster = monsters.value.find(m => m.id === monsterId);
-    if (monster) {
+    if (monster && monster.maxHp && monster.hp) {
       monster.hp = Math.max(0, Math.min(monster.maxHp, monster.hp + change));
     }
   }

@@ -61,14 +61,14 @@ watch(() => character.value, (newCharacter) => {
       initiative: newCharacter.initiative,
       hp: newCharacter.hp,
       maxHp: newCharacter.maxHp,
-      ac: newCharacter.ac,
+      ac: newCharacter.ac ?? 10,
       dexterity: newCharacter.dexterity,
       strength: newCharacter.strength,
       constitution: newCharacter.constitution,
       intelligence: newCharacter.intelligence,
       wisdom: newCharacter.wisdom,
       charisma: newCharacter.charisma,
-      notes: newCharacter.notes
+      notes: newCharacter.notes ?? ''
     };
   }
 }, { deep: true, immediate: true });
@@ -81,14 +81,14 @@ watch(isEditing, (editing) => {
       initiative: character.value.initiative,
       hp: character.value.hp,
       maxHp: character.value.maxHp,
-      ac: character.value.ac,
+      ac: character.value.ac ?? 10,
       dexterity: character.value.dexterity,
       strength: character.value.strength,
       constitution: character.value.constitution,
       intelligence: character.value.intelligence,
       wisdom: character.value.wisdom,
       charisma: character.value.charisma,
-      notes: character.value.notes
+      notes: character.value.notes ?? ''
     };
   }
 }, { immediate: true });
