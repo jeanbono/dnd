@@ -69,7 +69,6 @@ export const useMonsterStore = defineStore('monsters', () => {
   const searchError = ref<string | null>(null);
   const isAddingMonster = ref(false);
   const editingMonsterId = ref<string | null>(null);
-  const showStatsForMonster = ref<Record<string, boolean>>({});
   const expandedMonsters = ref<Record<string, boolean>>({});
   
   // Computed properties
@@ -113,7 +112,6 @@ export const useMonsterStore = defineStore('monsters', () => {
       
       // Nettoyer les états UI associés
       delete expandedMonsters.value[id];
-      delete showStatsForMonster.value[id];
       
       // If we were editing this monster, reset the editing state
       if (editingMonsterId.value === id) {
@@ -148,14 +146,6 @@ export const useMonsterStore = defineStore('monsters', () => {
   
   function isExpanded(monsterId: string): boolean {
     return !!expandedMonsters.value[monsterId];
-  }
-  
-  function toggleStats(monsterId: string) {
-    showStatsForMonster.value[monsterId] = !showStatsForMonster.value[monsterId];
-  }
-  
-  function isStatsShown(monsterId: string): boolean {
-    return !!showStatsForMonster.value[monsterId];
   }
   
   // Editing functions
@@ -415,7 +405,6 @@ export const useMonsterStore = defineStore('monsters', () => {
     searchError,
     isAddingMonster,
     editingMonsterId,
-    showStatsForMonster,
     expandedMonsters,
     
     // Computed
@@ -435,10 +424,8 @@ export const useMonsterStore = defineStore('monsters', () => {
     toggleAddingMonster,
     startEditingMonster,
     cancelEditingMonster,
-    toggleStats,
     toggleExpand,
     isExpanded,
-    isStatsShown,
     reorderMonsters,
     addCondition,
     removeCondition,
@@ -458,8 +445,7 @@ export const useMonsterStore = defineStore('monsters', () => {
   persist: {
     pick: [
       'monsters', 
-      'expandedMonsters', 
-      'showStatsForMonster'
+      'expandedMonsters'
     ]
   } 
 });

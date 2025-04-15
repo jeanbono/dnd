@@ -25,6 +25,7 @@ export const usePlayerStore = defineStore('player', () => {
   const players = ref<Player[]>([]);
   const isAddingPlayer = ref(false);
   const editingPlayerId = ref<string | null>(null);
+  const expandedPlayers = ref<Record<string, boolean>>({});
 
   // Computed properties
   const isEditingAnyPlayer = computed(() => editingPlayerId.value !== null);
@@ -90,6 +91,7 @@ export const usePlayerStore = defineStore('player', () => {
   function removePlayer(id: string) {
     if (confirm('Êtes-vous sûr de vouloir supprimer ce joueur ?')) {
       players.value = players.value.filter(player => player.id !== id);
+      delete expandedPlayers.value[id];
 
       // If we were editing this player, reset the editing state
       if (editingPlayerId.value === id) {
@@ -241,11 +243,22 @@ export const usePlayerStore = defineStore('player', () => {
     });
   }
 
+  // Gestion de l'expansion des joueurs
+  function toggleExpand(playerId: string) {
+    expandedPlayers.value[playerId] = !expandedPlayers.value[playerId];
+
+  }
+
+  function isExpanded(playerId: string): boolean {
+    return !!expandedPlayers.value[playerId];
+  }
+
   return {
     // State
     players,
     isAddingPlayer,
     editingPlayerId,
+    expandedPlayers,
 
     // Computed
     isEditingAnyPlayer,
@@ -274,13 +287,18 @@ export const usePlayerStore = defineStore('player', () => {
     getExhaustionLevelForPlayer,
     clearAllConditions,
     clearAllPlayersConditions,
-    decrementConditionDurations
+    decrementConditionDurations,
+
+    // Expansion
+    toggleExpand,
+    isExpanded
   };
 },
 {
   persist: {
     pick: [
-      'players'
+      'players',
+      'expandedPlayers'
     ],
   }
 });

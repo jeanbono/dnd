@@ -3,14 +3,13 @@ import { ref, computed, onMounted } from 'vue';
 import { useMonsterStore } from '@/stores/monster';
 import Sortable from 'sortablejs';
 import MonsterSearch from '@/components/monsters/MonsterSearch.vue';
-import MonsterForm from '@/components/monsters/MonsterForm.vue';
-import MonsterCard from '@/components/monsters/MonsterCard.vue';
+import CharacterForm from '@/components/common/CharacterForm.vue';
+import CharacterCard from '@/components/common/CharacterCard.vue';
 
 const monsterStore = useMonsterStore();
 const monsters = computed(() => monsterStore.monsters);
 const containerRef = ref<HTMLElement | null>(null);
 const showMonsterSearch = ref(false);
-const monsterCardRefs = ref<Record<string, any>>({});
 
 onMounted(() => {
   setupSortable();
@@ -34,19 +33,6 @@ function setupSortable() {
     });
   }
 }
-
-function rollAllInitiatives() {
-  // Récupérer toutes les références aux composants MonsterCard
-  const refs = monsterCardRefs.value;
-  
-  // Lancer l'initiative pour chaque monstre
-  monsters.value.forEach(monster => {
-    const ref = refs[monster.id];
-    if (ref && typeof ref.rollInitiative === 'function') {
-      ref.rollInitiative();
-    }
-  });
-}
 </script>
 
 <template>
@@ -69,7 +55,7 @@ function rollAllInitiatives() {
         <span class="hidden md:inline">{{ showMonsterSearch ? 'Masquer la Recherche' : 'Rechercher un Monstre' }}</span>
       </button>
       <button 
-        @click="rollAllInitiatives" 
+        @click="monsterStore.rollAllInitiatives()" 
         class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-md text-sm md:text-base flex items-center justify-center w-[32%] md:w-auto"
       >
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -85,8 +71,9 @@ function rollAllInitiatives() {
   <MonsterSearch v-if="showMonsterSearch" />
   
   <!-- Monster Form -->
-  <MonsterForm 
+  <CharacterForm 
     v-if="monsterStore.isAddingMonster" 
+    character-type="monster"
   />
   
   <!-- Monster List with Drag and Drop -->
@@ -99,11 +86,11 @@ function rollAllInitiatives() {
   </div>
   
   <div ref="containerRef" class="space-y-3">
-    <MonsterCard
+    <CharacterCard
       v-for="monster in monsters"
       :key="monster.id"
-      :monsterId="monster.id"
-      :ref="el => { if (el) monsterCardRefs[monster.id] = el }"
+      :character-id="monster.id"
+      character-type="monster"
     />
   </div>
 </template>

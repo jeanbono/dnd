@@ -2,8 +2,8 @@
 import { onMounted, ref } from 'vue';
 import { usePlayerStore } from '@/stores/player';
 import Sortable from 'sortablejs';
-import PlayerForm from '@/components/players/PlayerForm.vue';
-import PlayerCard from '@/components/players/PlayerCard.vue';
+import CharacterForm from '@/components/common/CharacterForm.vue';
+import CharacterCard from '@/components/common/CharacterCard.vue';
 
 const playerStore = usePlayerStore();
 const containerRef = ref<HTMLElement | null>(null);
@@ -48,7 +48,10 @@ function setupSortable() {
   </div>
   
   <!-- Player Form for adding new players only -->
-  <PlayerForm v-if="playerStore.isAddingPlayer" />
+  <CharacterForm 
+    v-if="playerStore.isAddingPlayer" 
+    character-type="player"
+  />
   
   <!-- Player List with Drag and Drop -->
   <div v-if="playerStore.players.length === 0" class="text-center py-8 bg-gray-100 rounded-md">
@@ -60,10 +63,11 @@ function setupSortable() {
   </div>
   
   <div ref="containerRef" class="space-y-3">
-    <PlayerCard 
+    <CharacterCard 
       v-for="player in playerStore.players" 
       :key="player.id" 
-      :playerId="player.id" 
+      :character-id="player.id"
+      character-type="player"
     />
   </div>
 </template>

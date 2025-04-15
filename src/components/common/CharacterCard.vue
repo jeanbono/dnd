@@ -1,22 +1,35 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { usePlayerStore } from '@/stores/player';
+import { useMonsterStore } from '@/stores/monster';
 import ConditionManager from '@/components/conditions/ConditionManager.vue';
 import CharacterStats from '@/components/common/CharacterStats.vue';
 import { isValidNumber } from '@/utils/validationUtils';
 
 const props = defineProps<{
-  playerId: string;
+  characterId: string;
+  characterType: 'player' | 'monster';
 }>();
 
 const playerStore = usePlayerStore();
-const player = computed(() => playerStore.getPlayerById(props.playerId));
+const monsterStore = useMonsterStore();
 
-// Computed properties
-const isEditing = computed(() => playerStore.editingPlayerId === props.playerId);
+// Computed properties pour accéder au store approprié selon le type de personnage
+const character = computed(() => {
+  return props.characterType === 'player' 
+    ? playerStore.getPlayerById(props.characterId)
+    : monsterStore.getMonsterById(props.characterId);
+});
+
+// État d'édition
+const isEditing = computed(() => {
+  return props.characterType === 'player' 
+    ? playerStore.editingPlayerId === props.characterId
+    : monsterStore.editingMonsterId === props.characterId;
+});
 
 // Données d'édition gérées localement
-const editedPlayer = ref({
+const editedCharacter = ref({
   name: '',
   initiative: undefined as number | undefined,
   hp: undefined as number | undefined,
@@ -40,49 +53,51 @@ const intelligenceInput = ref<HTMLInputElement | null>(null);
 const wisdomInput = ref<HTMLInputElement | null>(null);
 const charismaInput = ref<HTMLInputElement | null>(null);
 
-// Mettre à jour les données d'édition quand le joueur change
-watch(() => player.value, (newPlayer) => {
-  if (newPlayer && !isEditing.value) {
-    editedPlayer.value = {
-      name: newPlayer.name,
-      initiative: newPlayer.initiative,
-      hp: newPlayer.hp,
-      maxHp: newPlayer.maxHp,
-      ac: newPlayer.ac,
-      dexterity: newPlayer.dexterity,
-      strength: newPlayer.strength,
-      constitution: newPlayer.constitution,
-      intelligence: newPlayer.intelligence,
-      wisdom: newPlayer.wisdom,
-      charisma: newPlayer.charisma,
-      notes: newPlayer.notes
+// Mettre à jour les données d'édition quand le personnage change
+watch(() => character.value, (newCharacter) => {
+  if (newCharacter && !isEditing.value) {
+    editedCharacter.value = {
+      name: newCharacter.name,
+      initiative: newCharacter.initiative,
+      hp: newCharacter.hp,
+      maxHp: newCharacter.maxHp,
+      ac: newCharacter.ac,
+      dexterity: newCharacter.dexterity,
+      strength: newCharacter.strength,
+      constitution: newCharacter.constitution,
+      intelligence: newCharacter.intelligence,
+      wisdom: newCharacter.wisdom,
+      charisma: newCharacter.charisma,
+      notes: newCharacter.notes
     };
   }
 }, { deep: true, immediate: true });
 
 // Réinitialiser les données d'édition quand on entre en mode édition
 watch(isEditing, (editing) => {
-  if (editing && player.value) {
-    editedPlayer.value = {
-      name: player.value.name,
-      initiative: player.value.initiative,
-      hp: player.value.hp,
-      maxHp: player.value.maxHp,
-      ac: player.value.ac,
-      dexterity: player.value.dexterity,
-      strength: player.value.strength,
-      constitution: player.value.constitution,
-      intelligence: player.value.intelligence,
-      wisdom: player.value.wisdom,
-      charisma: player.value.charisma,
-      notes: player.value.notes
+  if (editing && character.value) {
+    editedCharacter.value = {
+      name: character.value.name,
+      initiative: character.value.initiative,
+      hp: character.value.hp,
+      maxHp: character.value.maxHp,
+      ac: character.value.ac,
+      dexterity: character.value.dexterity,
+      strength: character.value.strength,
+      constitution: character.value.constitution,
+      intelligence: character.value.intelligence,
+      wisdom: character.value.wisdom,
+      charisma: character.value.charisma,
+      notes: character.value.notes
     };
   }
 }, { immediate: true });
 
+// Couleur de la barre de PV
 const hpColor = computed(() => {
-  if (!player.value || player.value.hp === undefined || player.value.maxHp === undefined || player.value.maxHp === 0) return '';
-  const hpPercentage = (player.value.hp / player.value.maxHp) * 100;
+  if (!character.value || character.value.hp === undefined || character.value.maxHp === undefined || character.value.maxHp === 0) return '';
+  
+  const hpPercentage = (character.value.hp / character.value.maxHp) * 100;
   if (hpPercentage > 75) return 'bg-green-500';
   if (hpPercentage > 50) return 'bg-yellow-500';
   if (hpPercentage > 25) return 'bg-orange-500';
@@ -90,12 +105,26 @@ const hpColor = computed(() => {
 });
 
 const hpPercentage = computed(() => {
-  if (!player.value || player.value.hp === undefined || player.value.maxHp === undefined || player.value.maxHp === 0) return 0;
-  return (player.value.hp / player.value.maxHp) * 100;
+  if (!character.value || character.value.hp === undefined || character.value.maxHp === undefined || character.value.maxHp === 0) return 0;
+  return (character.value.hp / character.value.maxHp) * 100;
 });
 
+const isExpanded = computed(() => {
+  if (props.characterType === 'monster') {
+    return monsterStore.isExpanded(props.characterId);
+  } else {
+    // Pour les joueurs, on utilisera l'état du store
+    return playerStore.isExpanded(props.characterId);
+  }
+});
+
+// Actions
 function cancelEditing() {
-  playerStore.cancelEditingPlayer();
+  if (props.characterType === 'player') {
+    playerStore.cancelEditingPlayer();
+  } else {
+    monsterStore.cancelEditingMonster();
+  }
   formSubmitted.value = false;
 }
 
@@ -104,49 +133,106 @@ function saveChanges() {
   
   // Vérifier que tous les champs obligatoires sont remplis et validés
   if (
-    editedPlayer.value.name && 
-    isValidNumber(editedPlayer.value.initiative) &&
-    isValidNumber(editedPlayer.value.strength) &&
-    isValidNumber(editedPlayer.value.dexterity) &&
-    isValidNumber(editedPlayer.value.constitution) &&
-    isValidNumber(editedPlayer.value.intelligence) &&
-    isValidNumber(editedPlayer.value.wisdom) &&
-    isValidNumber(editedPlayer.value.charisma)
+    editedCharacter.value.name && 
+    isValidNumber(editedCharacter.value.initiative) &&
+    isValidNumber(editedCharacter.value.strength) &&
+    isValidNumber(editedCharacter.value.dexterity) &&
+    isValidNumber(editedCharacter.value.constitution) &&
+    isValidNumber(editedCharacter.value.intelligence) &&
+    isValidNumber(editedCharacter.value.wisdom) &&
+    isValidNumber(editedCharacter.value.charisma)
   ) {
-    playerStore.updatePlayer(props.playerId, {
-      name: editedPlayer.value.name,
-      initiative: editedPlayer.value.initiative || 0,
-      hp: editedPlayer.value.hp,
-      maxHp: editedPlayer.value.maxHp,
-      ac: editedPlayer.value.ac,
-      dexterity: editedPlayer.value.dexterity,
-      strength: editedPlayer.value.strength,
-      constitution: editedPlayer.value.constitution,
-      intelligence: editedPlayer.value.intelligence,
-      wisdom: editedPlayer.value.wisdom,
-      charisma: editedPlayer.value.charisma,
-      notes: editedPlayer.value.notes
-    });
+    if (props.characterType === 'player') {
+      playerStore.updatePlayer(props.characterId, {
+        name: editedCharacter.value.name,
+        initiative: editedCharacter.value.initiative || 0,
+        hp: editedCharacter.value.hp,
+        maxHp: editedCharacter.value.maxHp,
+        ac: editedCharacter.value.ac,
+        dexterity: editedCharacter.value.dexterity,
+        strength: editedCharacter.value.strength,
+        constitution: editedCharacter.value.constitution,
+        intelligence: editedCharacter.value.intelligence,
+        wisdom: editedCharacter.value.wisdom,
+        charisma: editedCharacter.value.charisma,
+        notes: editedCharacter.value.notes
+      });
+    } else {
+      monsterStore.updateMonster(props.characterId, {
+        name: editedCharacter.value.name,
+        initiative: editedCharacter.value.initiative || 0,
+        hp: editedCharacter.value.hp,
+        maxHp: editedCharacter.value.maxHp,
+        ac: editedCharacter.value.ac,
+        dexterity: editedCharacter.value.dexterity,
+        strength: editedCharacter.value.strength,
+        constitution: editedCharacter.value.constitution,
+        intelligence: editedCharacter.value.intelligence,
+        wisdom: editedCharacter.value.wisdom,
+        charisma: editedCharacter.value.charisma,
+        notes: editedCharacter.value.notes
+      });
+    }
     formSubmitted.value = false;
-    playerStore.cancelEditingPlayer(); // S'assurer que le mode édition est désactivé après la sauvegarde
+    cancelEditing();
   } else {
     console.log("Validation échouée: champs obligatoires manquants", {
-      name: !!editedPlayer.value.name,
-      initiative: isValidNumber(editedPlayer.value.initiative),
-      strength: isValidNumber(editedPlayer.value.strength),
-      dexterity: isValidNumber(editedPlayer.value.dexterity),
-      constitution: isValidNumber(editedPlayer.value.constitution),
-      intelligence: isValidNumber(editedPlayer.value.intelligence),
-      wisdom: isValidNumber(editedPlayer.value.wisdom),
-      charisma: isValidNumber(editedPlayer.value.charisma)
+      name: !!editedCharacter.value.name,
+      initiative: isValidNumber(editedCharacter.value.initiative),
+      strength: isValidNumber(editedCharacter.value.strength),
+      dexterity: isValidNumber(editedCharacter.value.dexterity),
+      constitution: isValidNumber(editedCharacter.value.constitution),
+      intelligence: isValidNumber(editedCharacter.value.intelligence),
+      wisdom: isValidNumber(editedCharacter.value.wisdom),
+      charisma: isValidNumber(editedCharacter.value.charisma)
     });
+  }
+}
+
+function toggleExpand() {
+  if (props.characterType === 'monster') {
+    monsterStore.toggleExpand(props.characterId);
+  } else {
+    playerStore.toggleExpand(props.characterId);
+  }
+}
+
+function rollInitiative() {
+  if (props.characterType === 'monster') {
+    monsterStore.rollInitiative(props.characterId);
+  }
+}
+
+function updateHp(value: number) {
+  if (props.characterType === 'player') {
+    playerStore.updatePlayerHp(props.characterId, value);
+  } else {
+    monsterStore.updateMonsterHp(props.characterId, value);
+  }
+}
+
+function removeCharacter() {
+  if (props.characterType === 'player') {
+    playerStore.removePlayer(props.characterId);
+  } else {
+    monsterStore.removeMonster(props.characterId);
+  }
+}
+
+function startEditing() {
+  if (props.characterType === 'player') {
+    playerStore.startEditingPlayer(props.characterId);
+  } else {
+    monsterStore.startEditingMonster(props.characterId);
   }
 }
 </script>
 
 <template>
-  <div v-if="player" class="bg-white rounded-md shadow border border-gray-200 p-4" :id="`player-${player.id}`">
-    <!-- En-tête du joueur - Toujours visible -->
+  <div v-if="character" class="bg-white rounded-md shadow border border-gray-200 p-4" 
+       :id="`${characterType}-${characterId}`"
+  >
+    <!-- En-tête du personnage - Toujours visible -->
     <div class="flex justify-between items-center mb-3">
       <div class="flex items-center">
         <div class="drag-handle cursor-move p-1 mr-2">
@@ -155,9 +241,9 @@ function saveChanges() {
           </svg>
         </div>
         <div>
-          <h3 class="font-bold text-lg">{{ player.name }}</h3>
+          <h3 class="font-bold text-lg">{{ character.name }}</h3>
           <div class="text-sm text-gray-500">
-            Initiative: {{ player.initiative }}
+            Initiative: {{ character.initiative }}
           </div>
         </div>
       </div>
@@ -165,9 +251,9 @@ function saveChanges() {
       <div class="flex items-center space-x-2">
         <button 
           v-if="!isEditing"
-          @click="playerStore.startEditingPlayer(playerId)" 
+          @click="startEditing" 
           class="text-blue-600 hover:text-blue-800 p-2 rounded-full hover:bg-blue-100 transition-colors duration-200 ease-in-out"
-          title="Modifier le joueur"
+          title="Modifier le personnage"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -175,12 +261,24 @@ function saveChanges() {
         </button>
         <button 
           v-if="!isEditing"
-          @click="playerStore.removePlayer(playerId)" 
+          @click="removeCharacter" 
           class="text-red-600 hover:text-red-800 p-2 rounded-full hover:bg-red-100 transition-colors duration-200 ease-in-out"
-          title="Supprimer le joueur"
+          title="Supprimer le personnage"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+        </button>
+        
+        <!-- Bouton d'expansion pour joueurs et monstres -->
+        <button 
+          v-if="!isEditing" 
+          @click="toggleExpand" 
+          class="text-indigo-600 hover:text-indigo-800 p-2 rounded-full hover:bg-indigo-100 transition-colors duration-200 ease-in-out"
+          title="Afficher/masquer les détails"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="isExpanded ? 'M5 15l7-7 7 7' : 'M19 9l-7 7-7-7'" />
           </svg>
         </button>
       </div>
@@ -189,15 +287,15 @@ function saveChanges() {
     <!-- View Mode -->
     <div v-if="!isEditing" class="flex flex-col">
       <!-- Barre de points de vie améliorée -->
-      <div v-if="player && player.hp !== undefined && player.maxHp !== undefined && player.maxHp > 0" class="mb-3">
+      <div v-if="character && character.hp !== undefined && character.maxHp !== undefined && character.maxHp > 0" class="mb-3">
         <div class="flex justify-between items-center mb-1">
           <div class="flex items-center space-x-2">
             <!-- CA avec icône de bouclier -->
-            <div v-if="player.ac" class="flex items-center bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-lg px-2 py-1 shadow-sm">
+            <div v-if="character.ac" class="flex items-center bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-lg px-2 py-1 shadow-sm">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
               </svg>
-              <span class="ml-1.5 font-semibold text-base text-gray-800">{{ player.ac }}</span>
+              <span class="ml-1.5 font-semibold text-base text-gray-800">{{ character.ac }}</span>
             </div>
             
             <!-- Points de vie -->
@@ -206,34 +304,34 @@ function saveChanges() {
                 <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
               </svg>
               <div class="flex items-baseline ml-1.5">
-                <span class="font-semibold text-base text-gray-800">{{ player.hp }}</span>
+                <span class="font-semibold text-base text-gray-800">{{ character.hp }}</span>
                 <span class="text-gray-500 text-xs mx-0.5">/</span>
-                <span class="text-gray-600 text-sm">{{ player.maxHp }}</span>
+                <span class="text-gray-600 text-sm">{{ character.maxHp }}</span>
               </div>
             </div>
           </div>
           
           <div class="flex space-x-1">
             <button 
-              @click="playerStore.updatePlayerHp(playerId, -1)" 
+              @click="updateHp(-1)" 
               class="bg-red-100 hover:bg-red-200 text-red-700 px-2 py-0.5 rounded text-xs sm:text-sm"
             >
               -1
             </button>
             <button 
-              @click="playerStore.updatePlayerHp(playerId, -5)" 
+              @click="updateHp(-5)" 
               class="bg-red-100 hover:bg-red-200 text-red-700 px-2 py-0.5 rounded text-xs sm:text-sm"
             >
               -5
             </button>
             <button 
-              @click="playerStore.updatePlayerHp(playerId, 1)" 
+              @click="updateHp(1)" 
               class="bg-green-100 hover:bg-green-200 text-green-700 px-2 py-0.5 rounded text-xs sm:text-sm"
             >
               +1
             </button>
             <button 
-              @click="playerStore.updatePlayerHp(playerId, 5)" 
+              @click="updateHp(5)" 
               class="bg-green-100 hover:bg-green-200 text-green-700 px-2 py-0.5 rounded text-xs sm:text-sm"
             >
               +5
@@ -250,28 +348,46 @@ function saveChanges() {
         </div>
       </div>
       
-      <!-- Statistiques du joueur -->
-      <CharacterStats 
-        v-if="player"
-        :strength="player.strength"
-        :dexterity="player.dexterity"
-        :constitution="player.constitution"
-        :intelligence="player.intelligence"
-        :wisdom="player.wisdom"
-        :charisma="player.charisma"
-      />
+      <!-- Contenu étendu -->
+      <div v-if="isExpanded">
+        <!-- Bouton de lancer d'initiative pour les monstres -->
+        <div v-if="characterType === 'monster'" class="flex justify-between items-center gap-2 mb-2">
+          <button 
+            @click="rollInitiative" 
+            class="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded-md text-xs sm:text-sm flex items-center"
+            title="Lancer l'initiative"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+            <span class="sm:hidden inline-block align-middle">Roll</span>
+            <span class="hidden sm:inline-block align-middle">Lancer Initiative</span>
+          </button>
+        </div>
       
-      <!-- Gestionnaire de conditions -->
-      <ConditionManager 
-        :conditions="player.conditions"
-        creature-type="player"
-        :creature-id="playerId"
-      />
+        <!-- Statistiques du personnage -->
+        <CharacterStats 
+          v-if="character"
+          :strength="character.strength"
+          :dexterity="character.dexterity"
+          :constitution="character.constitution"
+          :intelligence="character.intelligence"
+          :wisdom="character.wisdom"
+          :charisma="character.charisma"
+        />
       
-      <!-- Notes du joueur -->
-      <div v-if="player.notes" class="mt-4">
-        <h4 class="font-semibold text-sm mb-1">Notes:</h4>
-        <p class="text-sm text-gray-700 whitespace-pre-wrap">{{ player.notes }}</p>
+        <!-- Gestionnaire de conditions -->
+        <ConditionManager 
+          :conditions="character.conditions"
+          :creature-type="characterType"
+          :creature-id="characterId"
+        />
+        
+        <!-- Notes du personnage -->
+        <div v-if="character.notes" class="mt-4">
+          <h4 class="font-semibold text-sm mb-1">Notes:</h4>
+          <p class="text-sm text-gray-700 whitespace-pre-wrap">{{ character.notes }}</p>
+        </div>
       </div>
     </div>
     
@@ -284,10 +400,10 @@ function saveChanges() {
             Nom <span class="text-red-500">*</span>
           </label>
           <input 
-            v-model="editedPlayer.name" 
+            v-model="editedCharacter.name" 
             type="text" 
             class="w-full p-1.5 sm:p-2 border rounded-md text-sm"
-            :class="{ 'border-red-500 bg-red-50': editedPlayer.name === '' && formSubmitted, 'border-gray-300': !(editedPlayer.name === '' && formSubmitted) }"
+            :class="{ 'border-red-500 bg-red-50': editedCharacter.name === '' && formSubmitted, 'border-gray-300': !(editedCharacter.name === '' && formSubmitted) }"
             required
           >
         </div>
@@ -296,7 +412,7 @@ function saveChanges() {
             Initiative <span class="text-red-500">*</span>
           </label>
           <input 
-            v-model.number="editedPlayer.initiative" 
+            v-model.number="editedCharacter.initiative" 
             type="number" 
             class="w-full p-1.5 sm:p-2 border rounded-md text-sm"
             :class="{ 'border-red-500 bg-red-50': formSubmitted && initiativeInput && initiativeInput.value === '', 'border-gray-300': !(formSubmitted && initiativeInput && initiativeInput.value === '') }"
@@ -313,7 +429,7 @@ function saveChanges() {
           <div>
             <label class="block text-xs font-medium mb-1">Force <span class="text-red-500">*</span></label>
             <input 
-              v-model.number="editedPlayer.strength" 
+              v-model.number="editedCharacter.strength" 
               type="number" 
               class="w-full p-1.5 border rounded-md text-sm"
               :class="{ 'border-red-500 bg-red-50': formSubmitted && strengthInput && strengthInput.value === '', 'border-gray-300': !(formSubmitted && strengthInput && strengthInput.value === '') }"
@@ -324,7 +440,7 @@ function saveChanges() {
           <div>
             <label class="block text-xs font-medium mb-1">Dextérité <span class="text-red-500">*</span></label>
             <input 
-              v-model.number="editedPlayer.dexterity" 
+              v-model.number="editedCharacter.dexterity" 
               type="number" 
               class="w-full p-1.5 border rounded-md text-sm"
               :class="{ 'border-red-500 bg-red-50': formSubmitted && dexterityInput && dexterityInput.value === '', 'border-gray-300': !(formSubmitted && dexterityInput && dexterityInput.value === '') }"
@@ -335,7 +451,7 @@ function saveChanges() {
           <div>
             <label class="block text-xs font-medium mb-1">Constitution <span class="text-red-500">*</span></label>
             <input 
-              v-model.number="editedPlayer.constitution" 
+              v-model.number="editedCharacter.constitution" 
               type="number" 
               class="w-full p-1.5 border rounded-md text-sm"
               :class="{ 'border-red-500 bg-red-50': formSubmitted && constitutionInput && constitutionInput.value === '', 'border-gray-300': !(formSubmitted && constitutionInput && constitutionInput.value === '') }"
@@ -346,7 +462,7 @@ function saveChanges() {
           <div>
             <label class="block text-xs font-medium mb-1">Intelligence <span class="text-red-500">*</span></label>
             <input 
-              v-model.number="editedPlayer.intelligence" 
+              v-model.number="editedCharacter.intelligence" 
               type="number" 
               class="w-full p-1.5 border rounded-md text-sm"
               :class="{ 'border-red-500 bg-red-50': formSubmitted && intelligenceInput && intelligenceInput.value === '', 'border-gray-300': !(formSubmitted && intelligenceInput && intelligenceInput.value === '') }"
@@ -357,7 +473,7 @@ function saveChanges() {
           <div>
             <label class="block text-xs font-medium mb-1">Sagesse <span class="text-red-500">*</span></label>
             <input 
-              v-model.number="editedPlayer.wisdom" 
+              v-model.number="editedCharacter.wisdom" 
               type="number" 
               class="w-full p-1.5 border rounded-md text-sm"
               :class="{ 'border-red-500 bg-red-50': formSubmitted && wisdomInput && wisdomInput.value === '', 'border-gray-300': !(formSubmitted && wisdomInput && wisdomInput.value === '') }"
@@ -368,7 +484,7 @@ function saveChanges() {
           <div>
             <label class="block text-xs font-medium mb-1">Charisme <span class="text-red-500">*</span></label>
             <input 
-              v-model.number="editedPlayer.charisma" 
+              v-model.number="editedCharacter.charisma" 
               type="number" 
               class="w-full p-1.5 border rounded-md text-sm"
               :class="{ 'border-red-500 bg-red-50': formSubmitted && charismaInput && charismaInput.value === '', 'border-gray-300': !(formSubmitted && charismaInput && charismaInput.value === '') }"
@@ -384,7 +500,7 @@ function saveChanges() {
         <div>
           <label class="block text-xs sm:text-sm font-medium mb-1">PV <span class="text-gray-400 text-xs">(opt.)</span></label>
           <input 
-            v-model.number="editedPlayer.hp" 
+            v-model.number="editedCharacter.hp" 
             type="number" 
             class="w-full p-1.5 sm:p-2 border border-gray-300 rounded-md text-sm"
           >
@@ -392,7 +508,7 @@ function saveChanges() {
         <div>
           <label class="block text-xs sm:text-sm font-medium mb-1">PV Max <span class="text-gray-400 text-xs">(opt.)</span></label>
           <input 
-            v-model.number="editedPlayer.maxHp" 
+            v-model.number="editedCharacter.maxHp" 
             type="number" 
             class="w-full p-1.5 sm:p-2 border border-gray-300 rounded-md text-sm"
           >
@@ -400,7 +516,7 @@ function saveChanges() {
         <div>
           <label class="block text-xs sm:text-sm font-medium mb-1">CA</label>
           <input 
-            v-model.number="editedPlayer.ac" 
+            v-model.number="editedCharacter.ac" 
             type="number" 
             class="w-full p-1.5 sm:p-2 border border-gray-300 rounded-md text-sm"
           >
@@ -410,7 +526,7 @@ function saveChanges() {
       <div class="mb-3">
         <label class="block text-xs sm:text-sm font-medium mb-1">Notes</label>
         <textarea 
-          v-model="editedPlayer.notes" 
+          v-model="editedCharacter.notes" 
           rows="3" 
           class="w-full p-1.5 sm:p-2 border border-gray-300 rounded-md text-sm"
         ></textarea>
