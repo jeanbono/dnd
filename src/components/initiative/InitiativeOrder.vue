@@ -19,6 +19,8 @@ const dialogStore = useDialogStore();
 const initiativeListRef = ref<HTMLElement | null>(null);
 const waitingListRef = ref<HTMLElement | null>(null);
 
+const isRollingInitiative = ref(false);
+
 // Function to scroll to a monster in the monster list
 function scrollToMonster(monsterId: string) {
   const monsterElement = document.getElementById(`monster-${monsterId}`);
@@ -133,10 +135,8 @@ const waitingCharacters = computed(() => {
     if (a.initiative !== b.initiative) {
       return b.initiative - a.initiative;
     }
-    // En cas d'égalité d'initiative, utiliser le modificateur de DEX
-    const aDexMod = getDexModifier(a);
-    const bDexMod = getDexModifier(b);
-    return bDexMod - aDexMod;
+    // En cas d'égalité d'initiative, utiliser la DEX
+    return b.dexterity - a.dexterity;
   });
 });
 
@@ -325,15 +325,16 @@ function getConditionDetails(conditionWithLevel: any): { title: string; effects?
 
 // Fonction pour lancer l'initiative de tous les monstres
 function rollAllMonsterInitiatives() {
+  isRollingInitiative.value = true;
   monsterStore.rollAllInitiatives();
   
-  // On pourrait ajouter ici un feedback visuel temporaire
-  // pour montrer que les initiatives ont été lancées
+  // Mettre en surbrillance la liste d'initiative
   const initiativeList = initiativeListRef.value;
   if (initiativeList) {
     initiativeList.classList.add('highlight-rolled');
     setTimeout(() => {
       initiativeList.classList.remove('highlight-rolled');
+      isRollingInitiative.value = false;
     }, 1000);
   }
 }
@@ -401,6 +402,8 @@ function rollAllMonsterInitiatives() {
                 @click="rollAllMonsterInitiatives()" 
                 class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm flex items-center w-full sm:w-auto justify-center sm:justify-start"
                 :title="'Lancer l\'initiative pour tous les monstres'"
+                :class="{ 'opacity-50 cursor-not-allowed': isRollingInitiative }"
+                :disabled="isRollingInitiative"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />

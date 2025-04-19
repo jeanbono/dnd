@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { useMonsterStore } from '@/stores/monster';
+import { useMonsterStore, type Monster } from '@/stores/monster';
 import Sortable from 'sortablejs';
 import MonsterSearch from '@/components/monsters/MonsterSearch.vue';
 import CharacterForm from '@/components/common/CharacterForm.vue';
@@ -14,6 +14,14 @@ const showMonsterSearch = ref(false);
 onMounted(() => {
   setupSortable();
 });
+
+const handleSubmit = (monsterData: Monster) => {
+  monsterStore.addMonster({
+    ...monsterData,
+    conditions: []
+  });
+  monsterStore.cancelAddingMonster();
+};
 
 function setupSortable() {
   if (containerRef.value) {
@@ -70,11 +78,14 @@ function setupSortable() {
   <!-- Monster Search -->
   <MonsterSearch v-if="showMonsterSearch" />
   
-  <!-- Monster Form -->
-  <CharacterForm 
-    v-if="monsterStore.isAddingMonster" 
-    character-type="monster"
-  />
+  <!-- Player Form for adding new players only -->
+  <div v-if="monsterStore.isAddingMonster" class="bg-white p-4 rounded-md shadow mb-4 border border-gray-200">
+    <CharacterForm 
+      character-type="monster"
+      @submit="handleSubmit"
+      @cancel="monsterStore.cancelAddingMonster"
+    />
+  </div>
   
   <!-- Monster List with Drag and Drop -->
   <div v-if="monsters.length === 0" class="text-center py-8 bg-gray-100 rounded-md">

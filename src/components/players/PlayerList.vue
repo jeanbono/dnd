@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import { usePlayerStore } from '@/stores/player';
+import { usePlayerStore, type Player } from '@/stores/player';
 import Sortable from 'sortablejs';
-import CharacterForm from '@/components/common/CharacterForm.vue';
 import CharacterCard from '@/components/common/CharacterCard.vue';
+import CharacterForm from '@/components/common/CharacterForm.vue';
 
 const playerStore = usePlayerStore();
 const containerRef = ref<HTMLElement | null>(null);
@@ -11,6 +11,14 @@ const containerRef = ref<HTMLElement | null>(null);
 onMounted(() => {
   setupSortable();
 });
+
+const handleSubmit = (playerData: Player) => {
+  playerStore.addPlayer({
+    ...playerData,
+    conditions: []
+  });
+  playerStore.cancelAddingPlayer();
+};
 
 function setupSortable() {
   if (containerRef.value) {
@@ -48,10 +56,13 @@ function setupSortable() {
   </div>
   
   <!-- Player Form for adding new players only -->
-  <CharacterForm 
-    v-if="playerStore.isAddingPlayer" 
-    character-type="player"
-  />
+  <div v-if="playerStore.isAddingPlayer" class="bg-white p-4 rounded-md shadow mb-4 border border-gray-200">
+    <CharacterForm 
+      character-type="player"
+      @submit="handleSubmit"
+      @cancel="playerStore.cancelAddingPlayer"
+    />
+  </div>
   
   <!-- Player List with Drag and Drop -->
   <div v-if="playerStore.players.length === 0" class="text-center py-8 bg-gray-100 rounded-md">

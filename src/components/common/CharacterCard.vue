@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
-import { usePlayerStore } from '@/stores/player';
-import { useMonsterStore } from '@/stores/monster';
+import { computed, ref } from 'vue';
+import { usePlayerStore, type Player } from '@/stores/player';
+import { useMonsterStore, type Monster } from '@/stores/monster';
 import ConditionManager from '@/components/conditions/ConditionManager.vue';
 import CharacterStats from '@/components/common/CharacterStats.vue';
-import { isValidNumber } from '@/utils/validationUtils';
+import CharacterForm from '@/components/common/CharacterForm.vue';
 
 const props = defineProps<{
   characterId: string;
@@ -27,71 +27,6 @@ const isEditing = computed(() => {
     ? playerStore.editingPlayerId === props.characterId
     : monsterStore.editingMonsterId === props.characterId;
 });
-
-// Données d'édition gérées localement
-const editedCharacter = ref({
-  name: '',
-  initiative: undefined as number | undefined,
-  hp: undefined as number | undefined,
-  maxHp: undefined as number | undefined,
-  ac: undefined as number | undefined,
-  dexterity: undefined as number | undefined,
-  strength: undefined as number | undefined,
-  constitution: undefined as number | undefined,
-  intelligence: undefined as number | undefined,
-  wisdom: undefined as number | undefined,
-  charisma: undefined as number | undefined,
-  notes: ''
-});
-
-const formSubmitted = ref(false);
-const initiativeInput = ref<HTMLInputElement | null>(null);
-const strengthInput = ref<HTMLInputElement | null>(null);
-const dexterityInput = ref<HTMLInputElement | null>(null);
-const constitutionInput = ref<HTMLInputElement | null>(null);
-const intelligenceInput = ref<HTMLInputElement | null>(null);
-const wisdomInput = ref<HTMLInputElement | null>(null);
-const charismaInput = ref<HTMLInputElement | null>(null);
-
-// Mettre à jour les données d'édition quand le personnage change
-watch(() => character.value, (newCharacter) => {
-  if (newCharacter && !isEditing.value) {
-    editedCharacter.value = {
-      name: newCharacter.name,
-      initiative: newCharacter.initiative,
-      hp: newCharacter.hp,
-      maxHp: newCharacter.maxHp,
-      ac: newCharacter.ac,
-      dexterity: newCharacter.dexterity,
-      strength: newCharacter.strength,
-      constitution: newCharacter.constitution,
-      intelligence: newCharacter.intelligence,
-      wisdom: newCharacter.wisdom,
-      charisma: newCharacter.charisma,
-      notes: newCharacter.notes ?? ''
-    };
-  }
-}, { deep: true, immediate: true });
-
-// Réinitialiser les données d'édition quand on entre en mode édition
-watch(isEditing, (editing) => {
-  if (editing && character.value) {
-    editedCharacter.value = {
-      name: character.value.name,
-      initiative: character.value.initiative,
-      hp: character.value.hp,
-      maxHp: character.value.maxHp,
-      ac: character.value.ac,
-      dexterity: character.value.dexterity,
-      strength: character.value.strength,
-      constitution: character.value.constitution,
-      intelligence: character.value.intelligence,
-      wisdom: character.value.wisdom,
-      charisma: character.value.charisma,
-      notes: character.value.notes ?? ''
-    };
-  }
-}, { immediate: true });
 
 // Couleur de la barre de PV
 const hpColor = computed(() => {
@@ -127,68 +62,15 @@ function cancelEditing() {
   } else {
     monsterStore.cancelEditingMonster();
   }
-  formSubmitted.value = false;
 }
 
-function saveChanges() {
-  formSubmitted.value = true;
-  
-  // Vérifier que tous les champs obligatoires sont remplis et validés
-  if (
-    editedCharacter.value.name && 
-    isValidNumber(editedCharacter.value.initiative) &&
-    isValidNumber(editedCharacter.value.strength) &&
-    isValidNumber(editedCharacter.value.dexterity) &&
-    isValidNumber(editedCharacter.value.constitution) &&
-    isValidNumber(editedCharacter.value.intelligence) &&
-    isValidNumber(editedCharacter.value.wisdom) &&
-    isValidNumber(editedCharacter.value.charisma)
-  ) {
-    if (props.characterType === 'player') {
-      playerStore.updatePlayer(props.characterId, {
-        name: editedCharacter.value.name,
-        initiative: editedCharacter.value.initiative || 0,
-        hp: editedCharacter.value.hp,
-        maxHp: editedCharacter.value.maxHp,
-        ac: editedCharacter.value.ac,
-        dexterity: editedCharacter.value.dexterity,
-        strength: editedCharacter.value.strength,
-        constitution: editedCharacter.value.constitution,
-        intelligence: editedCharacter.value.intelligence,
-        wisdom: editedCharacter.value.wisdom,
-        charisma: editedCharacter.value.charisma,
-        notes: editedCharacter.value.notes
-      });
-    } else {
-      monsterStore.updateMonster(props.characterId, {
-        name: editedCharacter.value.name,
-        initiative: editedCharacter.value.initiative || 0,
-        hp: editedCharacter.value.hp,
-        maxHp: editedCharacter.value.maxHp,
-        ac: editedCharacter.value.ac,
-        dexterity: editedCharacter.value.dexterity,
-        strength: editedCharacter.value.strength,
-        constitution: editedCharacter.value.constitution,
-        intelligence: editedCharacter.value.intelligence,
-        wisdom: editedCharacter.value.wisdom,
-        charisma: editedCharacter.value.charisma,
-        notes: editedCharacter.value.notes
-      });
-    }
-    formSubmitted.value = false;
-    cancelEditing();
+function handleSubmit(characterData: Player | Monster) {
+  if (props.characterType === 'player') {
+    playerStore.updatePlayer(props.characterId, characterData);
   } else {
-    console.log("Validation échouée: champs obligatoires manquants", {
-      name: !!editedCharacter.value.name,
-      initiative: isValidNumber(editedCharacter.value.initiative),
-      strength: isValidNumber(editedCharacter.value.strength),
-      dexterity: isValidNumber(editedCharacter.value.dexterity),
-      constitution: isValidNumber(editedCharacter.value.constitution),
-      intelligence: isValidNumber(editedCharacter.value.intelligence),
-      wisdom: isValidNumber(editedCharacter.value.wisdom),
-      charisma: isValidNumber(editedCharacter.value.charisma)
-    });
+    monsterStore.updateMonster(props.characterId, characterData);
   }
+  cancelEditing();
 }
 
 function toggleExpand() {
@@ -441,164 +323,14 @@ function startEditing() {
     </div>
     
     <!-- Edit Mode -->
-    <div v-else class="flex flex-col">
-      <!-- Champs obligatoires -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mb-3">
-        <div>
-          <label class="block text-xs sm:text-sm font-medium mb-1">
-            Nom <span class="text-red-500">*</span>
-          </label>
-          <input 
-            v-model="editedCharacter.name" 
-            type="text" 
-            class="w-full p-1.5 sm:p-2 border rounded-md text-sm"
-            :class="{ 'border-red-500 bg-red-50': editedCharacter.name === '' && formSubmitted, 'border-gray-300': !(editedCharacter.name === '' && formSubmitted) }"
-            required
-          >
-        </div>
-        <div>
-          <label class="block text-xs sm:text-sm font-medium mb-1">
-            Initiative <span class="text-red-500">*</span>
-          </label>
-          <input 
-            v-model.number="editedCharacter.initiative" 
-            type="number" 
-            class="w-full p-1.5 sm:p-2 border rounded-md text-sm"
-            :class="{ 'border-red-500 bg-red-50': formSubmitted && initiativeInput && initiativeInput.value === '', 'border-gray-300': !(formSubmitted && initiativeInput && initiativeInput.value === '') }"
-            ref="initiativeInput"
-            required
-          >
-        </div>
-      </div>
-      
-      <!-- Caractéristiques -->
-      <div class="bg-gray-50 p-3 rounded-md border border-gray-200 mb-3">
-        <h4 class="text-sm font-medium mb-2">Caractéristiques</h4>
-        <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
-          <div>
-            <label class="block text-xs font-medium mb-1">Force <span class="text-red-500">*</span></label>
-            <input 
-              v-model.number="editedCharacter.strength" 
-              type="number" 
-              class="w-full p-1.5 border rounded-md text-sm"
-              :class="{ 'border-red-500 bg-red-50': formSubmitted && strengthInput && strengthInput.value === '', 'border-gray-300': !(formSubmitted && strengthInput && strengthInput.value === '') }"
-              required
-              ref="strengthInput"
-            >
-          </div>
-          <div>
-            <label class="block text-xs font-medium mb-1">Dextérité <span class="text-red-500">*</span></label>
-            <input 
-              v-model.number="editedCharacter.dexterity" 
-              type="number" 
-              class="w-full p-1.5 border rounded-md text-sm"
-              :class="{ 'border-red-500 bg-red-50': formSubmitted && dexterityInput && dexterityInput.value === '', 'border-gray-300': !(formSubmitted && dexterityInput && dexterityInput.value === '') }"
-              required
-              ref="dexterityInput"
-            >
-          </div>
-          <div>
-            <label class="block text-xs font-medium mb-1">Constitution <span class="text-red-500">*</span></label>
-            <input 
-              v-model.number="editedCharacter.constitution" 
-              type="number" 
-              class="w-full p-1.5 border rounded-md text-sm"
-              :class="{ 'border-red-500 bg-red-50': formSubmitted && constitutionInput && constitutionInput.value === '', 'border-gray-300': !(formSubmitted && constitutionInput && constitutionInput.value === '') }"
-              required
-              ref="constitutionInput"
-            >
-          </div>
-          <div>
-            <label class="block text-xs font-medium mb-1">Intelligence <span class="text-red-500">*</span></label>
-            <input 
-              v-model.number="editedCharacter.intelligence" 
-              type="number" 
-              class="w-full p-1.5 border rounded-md text-sm"
-              :class="{ 'border-red-500 bg-red-50': formSubmitted && intelligenceInput && intelligenceInput.value === '', 'border-gray-300': !(formSubmitted && intelligenceInput && intelligenceInput.value === '') }"
-              required
-              ref="intelligenceInput"
-            >
-          </div>
-          <div>
-            <label class="block text-xs font-medium mb-1">Sagesse <span class="text-red-500">*</span></label>
-            <input 
-              v-model.number="editedCharacter.wisdom" 
-              type="number" 
-              class="w-full p-1.5 border rounded-md text-sm"
-              :class="{ 'border-red-500 bg-red-50': formSubmitted && wisdomInput && wisdomInput.value === '', 'border-gray-300': !(formSubmitted && wisdomInput && wisdomInput.value === '') }"
-              required
-              ref="wisdomInput"
-            >
-          </div>
-          <div>
-            <label class="block text-xs font-medium mb-1">Charisme <span class="text-red-500">*</span></label>
-            <input 
-              v-model.number="editedCharacter.charisma" 
-              type="number" 
-              class="w-full p-1.5 border rounded-md text-sm"
-              :class="{ 'border-red-500 bg-red-50': formSubmitted && charismaInput && charismaInput.value === '', 'border-gray-300': !(formSubmitted && charismaInput && charismaInput.value === '') }"
-              required
-              ref="charismaInput"
-            >
-          </div>
-        </div>
-      </div>
-      
-      <!-- Champs optionnels -->
-      <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mb-3">
-        <div>
-          <label class="block text-xs sm:text-sm font-medium mb-1">PV <span class="text-gray-400 text-xs">(opt.)</span></label>
-          <input 
-            v-model.number="editedCharacter.hp" 
-            type="number" 
-            class="w-full p-1.5 sm:p-2 border border-gray-300 rounded-md text-sm"
-          >
-        </div>
-        <div>
-          <label class="block text-xs sm:text-sm font-medium mb-1">PV Max <span class="text-gray-400 text-xs">(opt.)</span></label>
-          <input 
-            v-model.number="editedCharacter.maxHp" 
-            type="number" 
-            class="w-full p-1.5 sm:p-2 border border-gray-300 rounded-md text-sm"
-          >
-        </div>
-        <div>
-          <label class="block text-xs sm:text-sm font-medium mb-1">CA</label>
-          <input 
-            v-model.number="editedCharacter.ac" 
-            type="number" 
-            class="w-full p-1.5 sm:p-2 border border-gray-300 rounded-md text-sm"
-          >
-        </div>
-      </div>
-      
-      <div class="mb-3">
-        <label class="block text-xs sm:text-sm font-medium mb-1">Notes</label>
-        <textarea 
-          v-model="editedCharacter.notes" 
-          rows="3" 
-          class="w-full p-1.5 sm:p-2 border border-gray-300 rounded-md text-sm"
-        ></textarea>
-      </div>
-      
-      <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-3 sm:mt-4">
-        <p class="text-xs text-gray-500 mb-2 sm:mb-0">Les champs marqués d'un <span class="text-red-500">*</span> sont obligatoires</p>
-        
-        <div class="flex flex-wrap gap-2">
-          <button 
-            @click="cancelEditing" 
-            class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm"
-          >
-            Annuler
-          </button>
-          <button 
-            @click="saveChanges" 
-            class="bg-green-600 hover:bg-green-700 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-md text-xs sm:text-sm"
-          >
-            Enregistrer
-          </button>
-        </div>
-      </div>
+    <div v-if="isEditing" class="flex flex-col">
+      <CharacterForm 
+        :character="character" 
+        :character-type="characterType"
+        :is-edit="true"
+        @submit="handleSubmit" 
+        @cancel="cancelEditing" 
+      />
     </div>
   </div>
 </template>
