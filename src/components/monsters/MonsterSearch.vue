@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
-import { useMonsterStore } from '@/stores/monster';
+import { useCharacterStore } from '@/stores/character';
+import { CharacterType } from '@/types/character';
 
 interface SearchResult {
   index: string;
@@ -8,7 +9,7 @@ interface SearchResult {
   url: string;
 }
 
-const store = useMonsterStore();
+const characterStore = useCharacterStore();
 const searchQuery = ref('');
 const isLoading = ref(false);
 const searchResults = ref<SearchResult[]>([]);
@@ -58,12 +59,42 @@ async function performSearch() {
 // Add a monster from the API
 async function addMonster(url: string) {
   isLoading.value = true;
-  await store.addMonsterFromApi(url);
-  isLoading.value = false;
-  
-  // Clear search results after adding
-  searchQuery.value = '';
-  searchResults.value = [];
+  // Récupérer les données du monstre depuis l'API DnD5e
+  try {
+    const response = await fetch(`https://www.dnd5eapi.co${url}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch monster details');
+    }
+    const data = await response.json();
+    const ac = Array.isArray(data.armor_class) && data.armor_class.length > 0 ? data.armor_class[0].value : 10;
+    const monster = {
+      name: data.name,
+      initiative: 0,
+      hp: data.hit_points,
+      maxHp: data.hit_points,
+      ac,
+      notes: data.desc || '',
+      apiId: data.index,
+      strength: data.strength,
+      dexterity: data.dexterity,
+      constitution: data.constitution,
+      intelligence: data.intelligence,
+      wisdom: data.wisdom,
+      charisma: data.charisma,
+      type: CharacterType.MONSTER,
+      conditions: []
+    };
+    characterStore.addCharacter(monster);
+    // Optionnel: lancer automatiquement l'initiative ?
+    // const added = characterStore.characters.find(c => c.apiId === data.index && c.type === 'monster');
+    // if (added) characterStore.rollInitiative(added.id);
+  } catch (error) {
+    searchError.value = error instanceof Error ? error.message : 'An unknown error occurred';
+  } finally {
+    isLoading.value = false;
+    searchQuery.value = '';
+    searchResults.value = [];
+  }
 }
 
 // Watch for changes to the search query

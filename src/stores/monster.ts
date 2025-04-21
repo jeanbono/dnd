@@ -145,7 +145,7 @@ export const useMonsterStore = defineStore('monsters', () => {
   }
   
   function isExpanded(monsterId: string): boolean {
-    return !!expandedMonsters.value[monsterId];
+    return expandedMonsters.value[monsterId];
   }
   
   // Editing functions

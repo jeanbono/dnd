@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { useMonsterStore, type Monster } from '@/stores/monster';
+import {computed, onMounted, ref} from 'vue';
+import {useCharacterStore} from '@/stores/character';
 import Sortable from 'sortablejs';
 import MonsterSearch from '@/components/monsters/MonsterSearch.vue';
 import CharacterForm from '@/components/common/CharacterForm.vue';
 import CharacterCard from '@/components/common/CharacterCard.vue';
+import {CharacterType} from "@/types/character.ts";
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
+import { faDiceD20 } from '@fortawesome/free-solid-svg-icons';
 
-const monsterStore = useMonsterStore();
-const monsters = computed(() => monsterStore.monsters);
+const characterStore = useCharacterStore();
+const monsters = computed(() => characterStore.characters.filter(c => c.type === CharacterType.MONSTER));
 const containerRef = ref<HTMLElement | null>(null);
 const showMonsterSearch = ref(false);
 
@@ -15,12 +18,13 @@ onMounted(() => {
   setupSortable();
 });
 
-const handleSubmit = (monsterData: Monster) => {
-  monsterStore.addMonster({
+const handleSubmit = (monsterData: any) => {
+  characterStore.addCharacter({
     ...monsterData,
-    conditions: []
+    type: CharacterType.MONSTER,
+    conditions: [],
   });
-  monsterStore.cancelAddingMonster();
+  characterStore.cancelAddingCharacter && characterStore.cancelAddingCharacter();
 };
 
 function setupSortable() {
@@ -30,13 +34,10 @@ function setupSortable() {
       handle: '.drag-handle',
       ghostClass: 'bg-gray-100',
       onEnd(evt: Sortable.SortableEvent) {
-        // Get the new order of monsters
         const newOrder = [...monsters.value];
         const movedItem = newOrder.splice(evt.oldIndex!, 1)[0];
         newOrder.splice(evt.newIndex!, 0, movedItem);
-        
-        // Update the store
-        monsterStore.reorderMonsters(newOrder);
+        characterStore.reorderCharacters && characterStore.reorderCharacters(newOrder, CharacterType.MONSTER);
       }
     });
   }
@@ -48,9 +49,9 @@ function setupSortable() {
     <h2 class="text-xl md:text-2xl font-bold">Monstres</h2>
     <div class="flex flex-wrap justify-between md:gap-2">
       <button 
-        @click="monsterStore.toggleAddingMonster()" 
+        @click="characterStore.toggleAddingCharacter(CharacterType.MONSTER)" 
         class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-md text-sm md:text-base w-[32%] md:w-auto"
-        v-if="!monsterStore.isAddingMonster"
+        v-if="!characterStore.isAddingCharacter || characterStore.addingType !== CharacterType.MONSTER"
       >
         <span class="md:hidden">+ Monstre</span>
         <span class="hidden md:inline">Ajouter un Monstre</span>
@@ -63,12 +64,11 @@ function setupSortable() {
         <span class="hidden md:inline">{{ showMonsterSearch ? 'Masquer la Recherche' : 'Rechercher un Monstre' }}</span>
       </button>
       <button 
-        @click="monsterStore.rollAllInitiatives()" 
+        @click="characterStore.rollAllInitiatives(CharacterType.MONSTER)" 
         class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-md text-sm md:text-base flex items-center justify-center w-[32%] md:w-auto"
+        title="Lancer l'initiative pour tous les monstres"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-        </svg>
+        <font-awesome-icon :icon="faDiceD20" class="mr-1.5" />
         <span class="md:hidden inline-block align-middle">Roll</span>
         <span class="hidden md:inline-block align-middle">Roll Initiatives</span>
       </button>
@@ -79,11 +79,11 @@ function setupSortable() {
   <MonsterSearch v-if="showMonsterSearch" />
   
   <!-- Player Form for adding new players only -->
-  <div v-if="monsterStore.isAddingMonster" class="bg-white p-4 rounded-md shadow mb-4 border border-gray-200">
+  <div v-if="characterStore.isAddingCharacter && characterStore.addingType === CharacterType.MONSTER" class="bg-white p-4 rounded-md shadow mb-4 border border-gray-200">
     <CharacterForm 
-      character-type="monster"
+      :character-type="CharacterType.MONSTER"
       @submit="handleSubmit"
-      @cancel="monsterStore.cancelAddingMonster"
+      @cancel="characterStore.cancelAddingCharacter && characterStore.cancelAddingCharacter()"
     />
   </div>
   
@@ -101,7 +101,7 @@ function setupSortable() {
       v-for="monster in monsters"
       :key="monster.id"
       :character-id="monster.id"
-      character-type="monster"
+      :character-type="CharacterType.MONSTER"
     />
   </div>
 </template>

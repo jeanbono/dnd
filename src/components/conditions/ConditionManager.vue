@@ -2,21 +2,20 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { Condition, type ConditionData, type ConditionWithLevel } from '@/utils/conditionUtils';
 import ConditionBadge from '@/components/conditions/ConditionBadge.vue';
-import { useMonsterStore } from '@/stores/monster';
-import { usePlayerStore } from '@/stores/player';
+import { useCharacterStore } from '@/stores/character';
+import { type CharacterType } from "@/types/character.ts";
 
 const props = defineProps<{
   // Les conditions actuelles de la créature
   conditions: ConditionWithLevel[];
   // Type de créature (pour les libellés)
-  creatureType: 'monster' | 'player';
+  creatureType: CharacterType;
   // ID de la créature
   creatureId: string;
 }>();
 
 // Stores
-const monsterStore = useMonsterStore();
-const playerStore = usePlayerStore();
+const characterStore = useCharacterStore();
 
 // État local
 const selectedCondition = ref<ConditionData | null>(null);
@@ -64,11 +63,7 @@ function addCondition() {
   if (selectedCondition.value.id === Condition.EXHAUSTION.id) {
     updateExhaustion();
   } else {
-    if (props.creatureType === 'monster') {
-      monsterStore.addCondition(props.creatureId, selectedCondition.value, conditionDuration.value);
-    } else {
-      playerStore.addCondition(props.creatureId, selectedCondition.value, conditionDuration.value);
-    }
+    characterStore.addCondition(props.creatureId, selectedCondition.value, conditionDuration.value);
   }
   
   selectedCondition.value = null;
@@ -78,31 +73,18 @@ function addCondition() {
 
 // Ajouter ou mettre à jour l'épuisement
 function updateExhaustion() {
-  if (props.creatureType === 'player') {
-    playerStore.updateExhaustionLevel(props.creatureId, Number(exhaustionLevel.value));
-  } else if (props.creatureType === 'monster') {
-    monsterStore.updateExhaustionLevel(props.creatureId, Number(exhaustionLevel.value));
-  }
-  showAddMenu.value = false;
+  characterStore.addCondition(props.creatureId, Condition.EXHAUSTION, null, exhaustionLevel.value);
 }
 
 // Effacer toutes les conditions
 function clearAllConditions() {
-  if (props.creatureType === 'monster') {
-    monsterStore.clearAllConditions(props.creatureId);
-  } else {
-    playerStore.clearAllConditions(props.creatureId);
-  }
+  characterStore.clearAllConditions(props.creatureId);
   showAddMenu.value = false;
 }
 
 // Supprimer l'épuisement
 function removeExhaustion() {
-  if (props.creatureType === 'monster') {
-    monsterStore.removeCondition(props.creatureId, Condition.EXHAUSTION);
-  } else {
-    playerStore.removeCondition(props.creatureId, Condition.EXHAUSTION);
-  }
+  characterStore.removeCondition(props.creatureId, Condition.EXHAUSTION);
   showAddMenu.value = false;
 }
 

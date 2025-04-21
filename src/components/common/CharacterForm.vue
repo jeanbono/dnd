@@ -1,21 +1,20 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { type Player } from '@/stores/player';
-import { type Monster } from '@/stores/monster';
 import { calculateAbilityModifier } from '@/utils/abilityUtils';
 import { useForm, Field, ErrorMessage } from 'vee-validate';
 import * as yup from 'yup';
+import type { Character, CharacterType } from "@/types/character.ts";
 
 const props = defineProps<{
-  characterType: 'player' | 'monster';
-  character?: Player | Monster;
+  characterType: CharacterType;
+  character?: Character;
   isEdit?: boolean;
 }>();
 
 const emit = defineEmits(['submit', 'cancel']);
 
 // Mode édition vs création
-const isEditMode = computed(() => props.isEdit === true || !!props.character);
+const isEditMode = computed(() => props.isEdit || !!props.character);
 
 // Définition du schéma de validation avec yup
 const validationSchema = yup.object({

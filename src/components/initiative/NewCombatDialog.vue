@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useMonsterStore } from '@/stores/monster';
-import { usePlayerStore } from '@/stores/player';
-import { useTurnStore } from '@/stores/turn';
-import { useDialogStore } from '@/stores/dialog';
+import {ref} from 'vue';
+import {useCharacterStore} from '@/stores/character';
+import {useTurnStore} from '@/stores/turn';
+import {useDialogStore} from '@/stores/dialog';
+import {CharacterType} from "@/types/character.ts";
 
-const monsterStore = useMonsterStore();
-const playerStore = usePlayerStore();
+const characterStore = useCharacterStore();
 const turnStore = useTurnStore();
 const dialogStore = useDialogStore();
 
@@ -20,18 +19,13 @@ function startNewCombat() {
   
   // Supprimer les monstres si l'option est sélectionnée
   if (removeMonsters.value) {
-    monsterStore.removeAllMonsters();
+    characterStore.removeAllCharactersOfType(CharacterType.MONSTER);
   }
   
   // Supprimer les conditions si l'option est sélectionnée
   if (clearConditions.value) {
-    // Supprimer les conditions des monstres (si on ne les a pas déjà supprimés)
-    if (!removeMonsters.value) {
-      monsterStore.clearAllMonstersConditions();
-    }
-    
-    // Supprimer les conditions des joueurs
-    playerStore.clearAllPlayersConditions();
+    // Supprimer les conditions des personnages
+    characterStore.clearAllCharactersConditions();
   }
   
   // Fermer la boîte de dialogue

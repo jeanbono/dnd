@@ -1,18 +1,19 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useTurnStore } from '@/stores/turn';
-import { useMonsterStore } from '@/stores/monster';
-import { usePlayerStore } from '@/stores/player';
+import { useCharacterStore } from '@/stores/character';
 import { useDialogStore } from '@/stores/dialog';
+import { CharacterType } from '@/types/character';
 import NewCombatDialog from '@/components/initiative/NewCombatDialog.vue';
-import Tooltip from '@/components/common/Tooltip.vue';
+import InitiativeCharacterCard from './InitiativeCharacterCard.vue';
 import { Condition, getConditionEffects } from '@/utils/conditionUtils';
 import Sortable from "sortablejs";
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
+import { faDiceD20 } from '@fortawesome/free-solid-svg-icons';
 
 // Stores
 const turnStore = useTurnStore();
-const monsterStore = useMonsterStore();
-const playerStore = usePlayerStore();
+const characterStore = useCharacterStore();
 const dialogStore = useDialogStore();
 
 // Références pour les conteneurs drag & drop
@@ -22,52 +23,34 @@ const waitingListRef = ref<HTMLElement | null>(null);
 const isRollingInitiative = ref(false);
 
 // Function to scroll to a monster in the monster list
-function scrollToMonster(monsterId: string) {
-  const monsterElement = document.getElementById(`monster-${monsterId}`);
-  if (monsterElement) {
-    // Scroll avec un offset pour que l'élément soit bien visible
-    const yOffset = -100; // Ajuster cette valeur selon les besoins
-    const y = monsterElement.getBoundingClientRect().top + window.pageYOffset + yOffset;
-    
-    window.scrollTo({
-      top: y,
-      behavior: 'smooth'
-    });
-    
-    // Ajouter une classe de mise en évidence temporaire
-    monsterElement.classList.add('highlight-element');
-    setTimeout(() => {
-      monsterElement.classList.remove('highlight-element');
-    }, 2000);
+function scrollToCharacter(characterId: string, characterType: CharacterType) {
+  // Cherche d'abord dans la MonsterList ou PlayerList
+  const targetType = characterType || '';
+  let cardSelector = '';
+  if (targetType === CharacterType.MONSTER) {
+    cardSelector = `#monster-${characterId}`;
+  } else if (targetType === CharacterType.PLAYER) {
+    cardSelector = `#player-${characterId}`;
+  } else {
+    // fallback: tente les deux
+    cardSelector = `#monster-${characterId}, #player-${characterId}`;
   }
-}
-
-// Function to scroll to a player in the player list
-function scrollToPlayer(playerId: string) {
-  const playerElement = document.getElementById(`player-${playerId}`);
-  if (playerElement) {
-    // Scroll avec un offset pour que l'élément soit bien visible
-    const yOffset = -100; // Ajuster cette valeur selon les besoins
-    const y = playerElement.getBoundingClientRect().top + window.pageYOffset + yOffset;
-    
+  const card = document.querySelector(cardSelector) as HTMLElement;
+  if (card) {
+    const yOffset = -100;
+    const y = card.getBoundingClientRect().top + window.scrollY + yOffset;
     window.scrollTo({
       top: y,
       behavior: 'smooth'
     });
-    
-    // Ajouter une classe de mise en évidence temporaire
-    playerElement.classList.add('highlight-element');
-    setTimeout(() => {
-      playerElement.classList.remove('highlight-element');
-    }, 2000);
+    return;
   }
 }
 
 // Function to advance to the next turn
 function nextTurn() {
   turnStore.nextTurn();
-  monsterStore.decrementConditionDurations();
-  playerStore.decrementConditionDurations();
+  characterStore.decrementConditionDurations();
 }
 
 // Récupérer le modificateur de DEX pour le tri
@@ -80,64 +63,21 @@ function getDexModifier(character: any): number {
 
 // Calculer l'ordre d'initiative
 const initiativeOrder = computed(() => {
-  // Récupérer tous les joueurs et monstres actifs
-  const players = playerStore.players.map(player => ({
-    ...player,
-    type: 'player'
-  }));
-  
-  const monsters = monsterStore.monsters.map(monster => ({
-    ...monster,
-    type: 'monster'
-  }));
-  
-  // Filtrer les personnages qui ne sont pas en attente
-  const allCharacters = [...players, ...monsters].filter(character => {
-    if (!character || !character.id) return false;
-    return !turnStore.isWaiting(character.id, character.type as 'player' | 'monster');
-  });
-  
-  // Trier par initiative (décroissant) puis par DEX (décroissant)
-  return allCharacters.sort((a, b) => {
-    if (!a || !b) return 0;
-    if (a.initiative !== b.initiative) {
-      return b.initiative - a.initiative;
-    }
-    // En cas d'égalité d'initiative, utiliser le modificateur de DEX
-    const aDexMod = getDexModifier(a);
-    const bDexMod = getDexModifier(b);
-    return bDexMod - aDexMod;
-  });
+  // Tous les personnages actifs (filtre custom si besoin)
+  return characterStore.characters.filter(c => !turnStore.isWaiting(c.id, c.type))
+    .sort((a, b) => {
+      if (a.initiative !== b.initiative) return b.initiative - a.initiative;
+      return b.dexterity - a.dexterity;
+    });
 });
 
 // Récupérer les personnages en attente
 const waitingCharacters = computed(() => {
-  // Récupérer tous les joueurs et monstres
-  const players = playerStore.players.map(player => ({
-    ...player,
-    type: 'player'
-  }));
-  
-  const monsters = monsterStore.monsters.map(monster => ({
-    ...monster,
-    type: 'monster'
-  }));
-  
-  // Filtrer les personnages qui sont en attente
-  const allCharacters = [...players, ...monsters].filter(character => {
-    if (!character || !character.id) return false;
-    return turnStore.isWaiting(character.id, character.type as 'player' | 'monster');
-  });
-  
-  // Trier par initiative (décroissant) puis par DEX (décroissant)
-  return allCharacters.sort((a, b) => {
-    if (!a || !b) return 0;
-    if (a.initiative !== b.initiative) {
-      return b.initiative - a.initiative;
-    }
-    // En cas d'égalité d'initiative, utiliser la DEX
-    return b.dexterity - a.dexterity;
-  });
+  return characterStore.characters.filter(c => turnStore.isWaiting(c.id, c.type))
+    .sort((a, b) => {
+      if (a.initiative !== b.initiative) return b.initiative - a.initiative;
+      return b.dexterity - a.dexterity;
+    });
 });
 
 // S'assurer que le drag & drop est configuré après le rendu du composant
@@ -207,9 +147,8 @@ function setupDragAndDrop() {
             // L'élément a été déposé sur la zone d'attente
             const id = evt.item.getAttribute('data-id');
             const type = evt.item.getAttribute('data-type');
-            console.log('Moving to waiting list:', id, type);
             if (id && type) {
-              turnStore.addToWaiting(id, type as 'player' | 'monster');
+              turnStore.addToWaiting(id, type as CharacterType);
             }
           }
         }
@@ -251,9 +190,8 @@ function setupDragAndDrop() {
             // L'élément a été déposé sur la liste d'initiative
             const id = evt.item.getAttribute('data-id');
             const type = evt.item.getAttribute('data-type');
-            console.log('Moving to initiative list:', id, type);
             if (id && type) {
-              turnStore.removeFromWaiting(id, type as 'player' | 'monster');
+              turnStore.removeFromWaiting(id, type as CharacterType);
             }
           }
         }
@@ -326,7 +264,7 @@ function getConditionDetails(conditionWithLevel: any): { title: string; effects?
 // Fonction pour lancer l'initiative de tous les monstres
 function rollAllMonsterInitiatives() {
   isRollingInitiative.value = true;
-  monsterStore.rollAllInitiatives();
+  characterStore.rollAllInitiatives(CharacterType.MONSTER);
   
   // Mettre en surbrillance la liste d'initiative
   const initiativeList = initiativeListRef.value;
@@ -385,7 +323,7 @@ function rollAllMonsterInitiatives() {
     
     <div>
       <div v-if="initiativeOrder.length === 0 && waitingCharacters.length === 0" class="text-center py-6 bg-gray-100 rounded-md">
-        <p class="text-gray-500">Aucun personnage dans l'ordre d'initiative pour le moment. Ajoutez des joueurs et des monstres pour commencer.</p>
+        <p class="text-gray-500">Aucun personnage dans l'ordre d'initiative pour le moment. Ajoutez des personnages pour commencer.</p>
       </div>
       
       <template v-else>
@@ -401,13 +339,11 @@ function rollAllMonsterInitiatives() {
             <button 
                 @click="rollAllMonsterInitiatives()" 
                 class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-md text-xs sm:text-sm flex items-center w-full sm:w-auto justify-center sm:justify-start"
-                :title="'Lancer l\'initiative pour tous les monstres'"
+                :title="'Lancer l\'initiative pour tous les personnages'"
                 :class="{ 'opacity-50 cursor-not-allowed': isRollingInitiative }"
                 :disabled="isRollingInitiative"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                </svg>
+                <font-awesome-icon :icon="faDiceD20" class="h-4 w-4 mr-1.5 inline-block" />
                 <span class="sm:hidden inline-block align-middle">Roll initiatives</span>
                 <span class="hidden sm:inline-block align-middle">Lancer les initiatives</span>
               </button>
@@ -417,117 +353,23 @@ function rollAllMonsterInitiatives() {
           <div ref="initiativeListRef" class="initiative-list space-y-2 border-2 border-dashed border-gray-300 p-4 rounded-lg">
             <!-- Message quand la liste est vide -->
             <div v-if="initiativeOrder.length === 0" class="text-center py-6 text-gray-500">
-              Aucun personnage dans l'ordre d'initiative. Ajoutez des joueurs ou des monstres pour commencer le combat.
+              Aucun personnage dans l'ordre d'initiative. Ajoutez des personnages pour commencer le combat.
             </div>
             
             <!-- Joueurs et monstres -->
             <div v-for="(character, index) in initiativeOrder" :key="`initiative-${character.id}`"
                  class="cursor-move"
                  :data-id="character.id"
-                 :data-type="character.type">
-              <div :class="{
-                      'bg-blue-50 border-blue-200': character.type === 'player',
-                      'bg-red-50 border-red-200': character.type === 'monster',
-                      'ml-0 mr-auto': character.type === 'player',
-                      'ml-auto mr-0': character.type === 'monster'
-                    }"
-                   class="p-2 rounded-md flex justify-between items-center border hover:bg-opacity-70 w-full sm:w-1/2 cursor-pointer hover:shadow-md transition-all duration-200"
-                   :title="character.type === 'player' ? 'Cliquez pour voir ce joueur' : 'Cliquez pour voir ce monstre'"
-                   @click="character.type === 'player' ? scrollToPlayer(character.id) : scrollToMonster(character.id)">
-                <div class="flex items-center">
-                  <div class="font-bold text-xl mr-3 w-6 text-center">{{ index + 1 }}</div>
-                  <div class="flex-grow">
-                    <div class="flex items-center flex-wrap">
-                      <span class="font-medium mr-1">{{ character.name }}</span>
-                      <!-- Badges pour écrans moyens et larges -->
-                      <div class="hidden md:flex flex-wrap items-center gap-1">
-                        <span v-if="hasDisadvantageOnAttacks(character)" 
-                              class="inline-flex items-center px-1.5 py-0.5 rounded-md text-xs font-medium bg-red-50 text-red-700 border border-red-200 shadow-sm" 
-                              :title="character.type === 'player' ? 'Ce personnage a un désavantage aux jets d\'attaque' : 'Ce monstre a un désavantage aux jets d\'attaque'">
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-0.5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                          </svg>
-                          Désavantage
-                        </span>
-                        <span v-if="hasAdvantageAgainstAttacks(character)" 
-                              class="inline-flex items-center px-1.5 py-0.5 rounded-md text-xs font-medium bg-green-50 text-green-700 border border-green-200 shadow-sm" 
-                              :title="character.type === 'player' ? 'Les attaques contre ce personnage ont un avantage' : 'Les attaques contre ce monstre ont un avantage'">
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-0.5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                          </svg>
-                          Avantage contre
-                        </span>
-                      </div>
-                      
-                      <!-- Version intermédiaire pour tablettes -->
-                      <div class="hidden sm:flex md:hidden flex-wrap items-center gap-1">
-                        <span v-if="hasDisadvantageOnAttacks(character)" 
-                              class="inline-flex items-center px-1.5 py-0.5 rounded-md text-xs font-medium bg-red-50 text-red-700 border border-red-200 shadow-sm" 
-                              :title="character.type === 'player' ? 'Ce personnage a un désavantage aux jets d\'attaque' : 'Ce monstre a un désavantage aux jets d\'attaque'">
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                        </svg>
-                        </span>
-                        <span v-if="hasAdvantageAgainstAttacks(character)" 
-                              class="inline-flex items-center px-1.5 py-0.5 rounded-md text-xs font-medium bg-green-50 text-green-700 border border-green-200 shadow-sm" 
-                              :title="character.type === 'player' ? 'Les attaques contre ce personnage ont un avantage' : 'Les attaques contre ce monstre ont un avantage'">
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                        </svg>
-                        </span>
-                      </div>
-                      
-                      <!-- Badges compacts pour écrans très étroits -->
-                      <div class="flex sm:hidden flex-wrap items-center gap-1">
-                        <span v-if="hasDisadvantageOnAttacks(character)" 
-                              class="inline-flex items-center px-1 py-0.5 rounded-md text-xs font-medium bg-red-50 text-red-700 border border-red-200 shadow-sm" 
-                              :title="character.type === 'player' ? 'Ce personnage a un désavantage aux jets d\'attaque' : 'Ce monstre a un désavantage aux jets d\'attaque'">
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                          </svg>
-                        </span>
-                        <span v-if="hasAdvantageAgainstAttacks(character)" 
-                              class="inline-flex items-center px-1 py-0.5 rounded-md text-xs font-medium bg-green-50 text-green-700 border border-green-200 shadow-sm" 
-                              :title="character.type === 'player' ? 'Les attaques contre ce personnage ont un avantage' : 'Les attaques contre ce monstre ont un avantage'">
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                          </svg>
-                        </span>
-                      </div>
-                    </div>
-                    <div class="text-sm text-gray-600">
-                      <span>Initiative : {{ character.initiative }}</span>
-                      <span class="ml-2">DEX : {{ getDexModifier(character) }}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <!-- Compteur d'états -->
-                <Tooltip placement="top" :offset-distance="10">
-                  <div 
-                    class="relative flex items-center justify-center h-6 w-6 rounded-full bg-purple-100 text-purple-800 text-xs font-bold cursor-help"
-                    v-if="character.conditions && character.conditions.length > 0"
-                  >
-                    {{ character.conditions.length }}
-                  </div>
-                  
-                  <template #content>
-                    <div class="bg-gray-800 text-white text-xs rounded p-2" style="min-width: 200px; max-width: 300px;">
-                      <div class="font-semibold mb-1">États actifs :</div>
-                      <div class="grid grid-cols-1 gap-2">
-                        <div v-for="condition in character.conditions" :key="condition.condition.id" class="mb-2">
-                          <div class="font-medium text-blue-300">{{ getConditionDetails(condition).title }}</div>
-                          <ul v-if="getConditionDetails(condition).effects" class="list-disc pl-4 mt-1 text-gray-300 text-xs">
-                            <li v-for="(effect, index) in getConditionDetails(condition).effects" :key="index" class="mb-1">
-                              {{ effect }}
-                            </li>
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                  </template>
-                </Tooltip>
-              </div>
+                 :data-type="character.type"
+                 :id="`character-${character.id}`">
+              <InitiativeCharacterCard
+                :character="character"
+                :index="index"
+                :hasDisadvantageOnAttacks="hasDisadvantageOnAttacks"
+                :hasAdvantageAgainstAttacks="hasAdvantageAgainstAttacks"
+                :getConditionDetails="getConditionDetails"
+                @cardClick="scrollToCharacter(character.id, character.type)"
+              />
             </div>
           </div>
         </div>
@@ -552,110 +394,17 @@ function rollAllMonsterInitiatives() {
             <div v-for="(character, index) in waitingCharacters" :key="`waiting-${character.id}`"
                  class="cursor-move"
                  :data-id="character.id"
-                 :data-type="character.type">
-              <div :class="{
-                      'bg-blue-50 border-blue-200': character.type === 'player',
-                      'bg-red-50 border-red-200': character.type === 'monster',
-                      'ml-0 mr-auto': character.type === 'player',
-                      'ml-auto mr-0': character.type === 'monster'
-                    }"
-                   class="p-2 rounded-md flex justify-between items-center border hover:bg-opacity-70 w-full sm:w-1/2 cursor-pointer hover:shadow-md transition-all duration-200"
-                   :title="character.type === 'player' ? 'Cliquez pour voir ce joueur' : 'Cliquez pour voir ce monstre'"
-                   @click="character.type === 'player' ? scrollToPlayer(character.id) : scrollToMonster(character.id)">
-                <div class="flex items-center">
-                  <div class="font-bold text-xl mr-3 w-6 text-center">{{ index + 1 }}</div>
-                  <div class="flex-grow">
-                    <div class="flex items-center flex-wrap">
-                      <span class="font-medium mr-1">{{ character.name }}</span>
-                      <!-- Badges pour écrans moyens et larges -->
-                      <div class="hidden md:flex flex-wrap items-center gap-1">
-                        <span v-if="hasDisadvantageOnAttacks(character)" 
-                              class="inline-flex items-center px-1.5 py-0.5 rounded-md text-xs font-medium bg-red-50 text-red-700 border border-red-200 shadow-sm" 
-                              :title="character.type === 'player' ? 'Ce personnage a un désavantage aux jets d\'attaque' : 'Ce monstre a un désavantage aux jets d\'attaque'">
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-0.5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                          </svg>
-                          Désavantage
-                        </span>
-                        <span v-if="hasAdvantageAgainstAttacks(character)" 
-                              class="inline-flex items-center px-1.5 py-0.5 rounded-md text-xs font-medium bg-green-50 text-green-700 border border-green-200 shadow-sm" 
-                              :title="character.type === 'player' ? 'Les attaques contre ce personnage ont un avantage' : 'Les attaques contre ce monstre ont un avantage'">
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-0.5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                          </svg>
-                          Avantage contre
-                        </span>
-                      </div>
-                      
-                      <!-- Version intermédiaire pour tablettes -->
-                      <div class="hidden sm:flex md:hidden flex-wrap items-center gap-1">
-                        <span v-if="hasDisadvantageOnAttacks(character)" 
-                              class="inline-flex items-center px-1.5 py-0.5 rounded-md text-xs font-medium bg-red-50 text-red-700 border border-red-200 shadow-sm" 
-                              :title="character.type === 'player' ? 'Ce personnage a un désavantage aux jets d\'attaque' : 'Ce monstre a un désavantage aux jets d\'attaque'">
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                          </svg>
-                        </span>
-                        <span v-if="hasAdvantageAgainstAttacks(character)" 
-                              class="inline-flex items-center px-1.5 py-0.5 rounded-md text-xs font-medium bg-green-50 text-green-700 border border-green-200 shadow-sm" 
-                              :title="character.type === 'player' ? 'Les attaques contre ce personnage ont un avantage' : 'Les attaques contre ce monstre ont un avantage'">
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                        </svg>
-                        </span>
-                      </div>
-                      
-                      <!-- Badges compacts pour écrans très étroits -->
-                      <div class="flex sm:hidden flex-wrap items-center gap-1">
-                        <span v-if="hasDisadvantageOnAttacks(character)" 
-                              class="inline-flex items-center px-1 py-0.5 rounded-md text-xs font-medium bg-red-50 text-red-700 border border-red-200 shadow-sm" 
-                              :title="character.type === 'player' ? 'Ce personnage a un désavantage aux jets d\'attaque' : 'Ce monstre a un désavantage aux jets d\'attaque'">
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                          </svg>
-                        </span>
-                        <span v-if="hasAdvantageAgainstAttacks(character)" 
-                              class="inline-flex items-center px-1 py-0.5 rounded-md text-xs font-medium bg-green-50 text-green-700 border border-green-200 shadow-sm" 
-                              :title="character.type === 'player' ? 'Les attaques contre ce personnage ont un avantage' : 'Les attaques contre ce monstre ont un avantage'">
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                          </svg>
-                        </span>
-                      </div>
-                    </div>
-                    <div class="text-sm text-gray-600">
-                      <span>Initiative : {{ character.initiative }}</span>
-                      <span class="ml-2">DEX : {{ getDexModifier(character) }}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <!-- Compteur d'états -->
-                <Tooltip placement="top" :offset-distance="10">
-                  <div 
-                    class="relative flex items-center justify-center h-6 w-6 rounded-full bg-purple-100 text-purple-800 text-xs font-bold cursor-help"
-                    v-if="character.conditions && character.conditions.length > 0"
-                  >
-                    {{ character.conditions.length }}
-                  </div>
-                  
-                  <template #content>
-                    <div class="bg-gray-800 text-white text-xs rounded p-2" style="min-width: 200px; max-width: 300px;">
-                      <div class="font-semibold mb-1">États actifs :</div>
-                      <div class="grid grid-cols-1 gap-2">
-                        <div v-for="condition in character.conditions" :key="condition.condition.id" class="mb-2">
-                          <div class="font-medium text-blue-300">{{ getConditionDetails(condition).title }}</div>
-                          <ul v-if="getConditionDetails(condition).effects" class="list-disc pl-4 mt-1 text-gray-300 text-xs">
-                            <li v-for="(effect, index) in getConditionDetails(condition).effects" :key="index" class="mb-1">
-                              {{ effect }}
-                            </li>
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                  </template>
-                </Tooltip>
-              </div>
+                 :data-type="character.type"
+                 :id="`character-${character.id}`">
+              <InitiativeCharacterCard
+                :character="character"
+                :index="index"
+                :hasDisadvantageOnAttacks="hasDisadvantageOnAttacks"
+                :hasAdvantageAgainstAttacks="hasAdvantageAgainstAttacks"
+                :getDexModifier="getDexModifier"
+                :getConditionDetails="getConditionDetails"
+                @cardClick="scrollToCharacter(character.id, character.type)"
+              />
             </div>
           </div>
         </div>
