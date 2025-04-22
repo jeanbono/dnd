@@ -22,6 +22,10 @@ export interface Character {
   conditions: { condition: any; duration?: number; level?: number }[];
   // Type (joueur/monstre)
   type: CharacterType;
+  deathSavesSuccess?: number;
+  deathSavesFail?: number;
+  isStable?: boolean;
+  isDead?: boolean;
 }
 
 export interface CharacterGroup {

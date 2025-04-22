@@ -215,8 +215,20 @@ export const useCharacterStore = defineStore('character', () => {
   // HP/Initiative
   function updateCharacterHp(id: string, change: number) {
     const character = getCharacterById(id);
-    if (character) {
-      character.hp = Math.max(0, Math.min(character.maxHp, character.hp + change));
+    if (!character) return;
+    const previousHp = character.hp || 0;
+    character.hp = Math.max(0, previousHp + change);
+    // Si le personnage vient de tomber à 0hp (et n'est pas mort), reset les death saves et isStable
+    if (previousHp > 0 && character.hp === 0 && !character.isDead) {
+      character.deathSavesSuccess = 0;
+      character.deathSavesFail = 0;
+      character.isStable = false;
+    }
+    // Si le personnage est soigné alors qu'il faisait des jets contre la mort (mais pas mort), reset aussi
+    if (character.hp > 0 && !character.isDead && (character.deathSavesSuccess || character.deathSavesFail)) {
+      character.deathSavesSuccess = 0;
+      character.deathSavesFail = 0;
+      character.isStable = false;
     }
   }
 
@@ -359,6 +371,25 @@ export const useCharacterStore = defineStore('character', () => {
     }
   }
 
+  // Gestion des jets contre la mort (death saves)
+  function addDeathSave(id: string, isSuccess: boolean) {
+    const character = getCharacterById(id);
+    if (!character || character.isDead || character.isStable) return;
+    if (isSuccess) {
+      character.deathSavesSuccess = (character.deathSavesSuccess || 0) + 1;
+      if (character.deathSavesSuccess >= 3) {
+        character.isStable = true;
+        character.deathSavesFail = 0;
+      }
+    } else {
+      character.deathSavesFail = (character.deathSavesFail || 0) + 1;
+      if (character.deathSavesFail >= 3) {
+        character.isDead = true;
+        character.deathSavesSuccess = 0;
+      }
+    }
+  }
+
   return {
     characters,
     groups,
@@ -405,6 +436,7 @@ export const useCharacterStore = defineStore('character', () => {
     getCharactersByGroupId,
     getCharacterGroup,
     updateCharacterInitiative,
+    addDeathSave,
   };
 },
 {

@@ -27,7 +27,6 @@ const handleCreateGroup = (groupData: { name: string; characterIds: string[]; ty
   characterStore.createGroup(groupData.name, groupData.type, groupData.characterIds);
   isCreatingGroup.value = false;
 };
-
 </script>
 
 <template>
@@ -94,14 +93,16 @@ const handleCreateGroup = (groupData: { name: string; characterIds: string[]; ty
           :group-id="element"
           :character-type="CharacterType.PLAYER"
       />
-      <CharacterCard
-          v-else
-          :character-id="element"
-          :character-type="CharacterType.PLAYER"
-          :show-drag-handle="true"
-          :can-roll-initiative="false"
-          :show-initiative="true"
-      />
+      <template v-else>
+        <CharacterCard
+            :character-id="element"
+            :character-type="CharacterType.PLAYER"
+            :show-drag-handle="true"
+            :can-roll-initiative="false"
+            :show-initiative="true"
+            :show-death-saves="true"
+        />
+      </template>
     </template>
   </Draggable>
 </template>
