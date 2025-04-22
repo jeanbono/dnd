@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { defineEmits } from 'vue';
 import Tooltip from '@/components/common/Tooltip.vue';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 import { faDiceD20, faBolt } from '@fortawesome/free-solid-svg-icons';

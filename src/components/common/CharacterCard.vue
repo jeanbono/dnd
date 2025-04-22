@@ -11,6 +11,9 @@ import { faPen, faClone, faTrashCan, faChevronDown, faChevronUp, faDiceD20, faSh
 const props = defineProps<{
   characterId: string;
   characterType: CharacterType;
+  showDragHandle?: boolean;
+  showInitiative?: boolean;
+  canRollInitiative?: boolean;
 }>();
 
 const characterStore = useCharacterStore();
@@ -68,20 +71,10 @@ function startEditing() {
   characterStore.startEditingCharacter(props.characterId);
 }
 
-function duplicateMonster() {
-  if (!character.value) return;
-  // Dupliquer toutes les propriétés sauf id
-  const { id, ...rest } = character.value;
-  const newCharacter = characterStore.addCharacter({ ...rest });
-  // Insérer juste après l'original
-  const idx = characterStore.characters.findIndex(c => c.id === id);
-  if (idx !== -1 && newCharacter) {
-    // Retirer le duplicata de la fin
-    characterStore.characters.splice(characterStore.characters.length - 1, 1);
-    // Insérer juste après l'original
-    characterStore.characters.splice(idx + 1, 0, newCharacter);
-  }
+function duplicateCharacter() {
+  characterStore.duplicateCharacter(props.characterId);
 }
+
 </script>
 
 <template>
@@ -91,12 +84,12 @@ function duplicateMonster() {
     <!-- En-tête du personnage - Toujours visible -->
     <div class="flex justify-between items-center mb-3">
       <div class="flex items-center">
-        <div class="drag-handle cursor-move p-1 mr-2">
+        <div v-if="showDragHandle !== false" class="drag-handle cursor-move p-1 mr-2">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16" /></svg>
         </div>
         <div>
           <h3 class="font-bold text-lg">{{ character.name }}</h3>
-          <div class="text-sm text-gray-500">
+          <div v-if="showInitiative !== false" class="text-sm text-gray-500">
             Initiative: {{ character.initiative }}
           </div>
         </div>
@@ -114,7 +107,7 @@ function duplicateMonster() {
         <!-- Bouton Dupliquer (uniquement pour les monstres) -->
         <button
           v-if="!isEditing && characterType === 'monster'"
-          @click="duplicateMonster"
+          @click="duplicateCharacter"
           class="text-green-600 hover:text-green-800 p-2 rounded-full hover:bg-green-100 transition-colors duration-200 ease-in-out flex items-center justify-center w-9 h-9"
           title="Dupliquer ce monstre"
         >
@@ -207,6 +200,7 @@ function duplicateMonster() {
         <div v-if="characterType === 'monster'" class="flex items-center mb-3">
           <!-- Bouton de lancer d'initiative (standard) -->
           <button
+            v-if="canRollInitiative !== false"
             @click="rollInitiative"
             class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-md text-sm flex items-center"
             :class="{ 'opacity-50 cursor-not-allowed': showInitiativeResult }"
@@ -214,7 +208,7 @@ function duplicateMonster() {
             title="Lancer l'initiative"
           >
             <font-awesome-icon :icon="faDiceD20" class="text-lg mr-2" />
-            Lancer l'initiative
+            <span>Lancer l'initiative</span>
           </button>
 
           <!-- Affichage du résultat du lancer sur la même ligne -->

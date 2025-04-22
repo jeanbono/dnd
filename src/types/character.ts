@@ -23,3 +23,11 @@ export interface Character {
   // Type (joueur/monstre)
   type: CharacterType;
 }
+
+export interface CharacterGroup {
+  id: string;
+  name: string;
+  initiative: number;
+  type: CharacterType;
+  characterIds: string[];
+}
