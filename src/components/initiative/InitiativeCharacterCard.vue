@@ -68,7 +68,6 @@ const specialTags = [
         props.character.type === 'player' ? 'ml-0 mr-auto' : 'ml-auto mr-0',
         'p-2 rounded-md flex justify-between items-center border hover:bg-opacity-70 w-full sm:w-1/2 cursor-pointer hover:shadow-md transition-all duration-200'
       ]"
-      :title="props.character.type === 'player' ? 'Cliquez pour voir ce joueur' : 'Cliquez pour voir ce monstre'"
       @click="$emit('cardClick', props.character)"
       style="position: relative;"
     >
@@ -77,18 +76,22 @@ const specialTags = [
         <div class="flex-grow flex flex-col min-w-0">
           <div class="flex items-center min-w-0">
             <span class="font-bold text-lg truncate max-w-[120px]">{{ props.character.name }}</span>
-            <span v-if="props.character.isDead" class="bg-gradient-to-r from-red-600 to-red-400 border-red-600 ml-2">
+            <span v-if="props.character.isDead"
+              class="ml-2 px-2 py-0.5 rounded-lg border-2 border-red-700 bg-gradient-to-r from-red-700 to-red-400 text-white text-xs font-bold flex items-center gap-1 shadow-sm animate-pulse"
+              style="letter-spacing:0.03em; opacity:0.96;">
               <font-awesome-icon :icon="faSkull" class="w-4 h-4 mr-1 -ml-1 text-white/90" />
               Mort
             </span>
-            <template v-for="tag in specialTags" :key="tag.key">
-              <span
-                v-if="tag.show && tag.show() && tag.bg && tag.label && tag.icon"
-                :class="[tag.bg, 'px-1.5 py-0.5 rounded text-xs font-semibold', 'ml-2']"
-                :title="tag.tooltip"
-              >
-                <span class="mr-1">{{ tag.icon() }}</span>{{ tag.label }}
-              </span>
+            <template v-if="!props.character.isDead">
+              <template v-for="tag in specialTags" :key="tag.key">
+                <span
+                  v-if="tag.show && tag.show() && tag.bg && tag.label && tag.icon"
+                  :class="[tag.bg, 'px-1.5 py-0.5 rounded text-xs font-semibold', 'ml-2']"
+                  :title="tag.tooltip"
+                >
+                  <span class="mr-1">{{ tag.icon() }}</span>{{ tag.label }}
+                </span>
+              </template>
             </template>
           </div>
           <div v-if="!props.character.isDead" class="flex gap-2 mt-0.5 mb-0.5">
