@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { Condition, type ConditionData, type ConditionWithLevel } from '@/utils/conditionUtils';
 import ConditionBadge from '@/components/conditions/ConditionBadge.vue';
 import { useCharacterStore } from '@/stores/character';

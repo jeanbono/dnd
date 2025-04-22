@@ -6,7 +6,16 @@ import CharacterStats from '@/components/common/CharacterStats.vue';
 import CharacterForm from '@/components/common/CharacterForm.vue';
 import { type CharacterType } from '@/types/character';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
-import { faPen, faClone, faTrashCan, faChevronDown, faChevronUp, faDiceD20, faShieldAlt, faHeart } from '@fortawesome/free-solid-svg-icons';
+import {
+  faChevronDown,
+  faChevronUp,
+  faClone,
+  faDiceD20,
+  faHeart,
+  faPen,
+  faShieldAlt,
+  faTrashCan
+} from '@fortawesome/free-solid-svg-icons';
 
 const props = defineProps<{
   characterId: string;

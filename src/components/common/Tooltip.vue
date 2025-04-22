@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { onMounted, onUnmounted, ref, watch } from 'vue';
 import { createPopper, type Instance, type Placement } from '@popperjs/core';
 
 const props = defineProps({

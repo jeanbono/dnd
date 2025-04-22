@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import { useCharacterStore } from '@/stores/character';
-import { type CharacterType, type Character } from '@/types/character';
+import { type Character, type CharacterType } from '@/types/character';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
-import { faTrashCan, faChevronDown, faChevronUp, faDiceD20, faUsers } from '@fortawesome/free-solid-svg-icons';
+import { faChevronDown, faChevronUp, faDiceD20, faTrashCan, faUsers } from '@fortawesome/free-solid-svg-icons';
 import CharacterCard from '@/components/common/CharacterCard.vue';
 import Draggable from 'vuedraggable';
-import {calculateAbilityModifier} from "@/utils/abilityUtils.ts";
+import { calculateAbilityModifier } from "@/utils/abilityUtils.ts";
 
 const props = defineProps<{
   groupId: string;
@@ -29,6 +29,23 @@ const maxInitiativeBonus = computed(() => {
     ? Math.max(...characters.value.map(c => c?.dexterity ? calculateAbilityModifier(c.dexterity)
     : 0)) : 0;
 });
+
+// Ajout du watcher pour appliquer l'initiative du groupe aux nouveaux membres
+watch(
+  () => group.value?.characterIds,
+  (newIds, oldIds) => {
+    if (!group.value) return;
+    if (!oldIds) return;
+    // Détecte les nouveaux membres ajoutés
+    const added = newIds?.filter(id => !oldIds.includes(id)) || [];
+    if (added.length && group.value.initiative) {
+      added.forEach(id => {
+        characterStore.updateCharacterInitiative(id, group?.value?.initiative ?? 0);
+      });
+    }
+  },
+  { deep: true }
+);
 
 function toggleExpand() {
   characterStore.toggleExpandGroup(props.groupId);

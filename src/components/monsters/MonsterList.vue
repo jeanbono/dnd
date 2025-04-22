@@ -8,7 +8,7 @@ import CharacterCard from '@/components/common/CharacterCard.vue';
 import CharacterGroupCard from '@/components/common/CharacterGroupCard.vue';
 import GroupCreationForm from '@/components/common/GroupCreationForm.vue';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
-import { faDiceD20, faUserGroup } from '@fortawesome/free-solid-svg-icons';
+import { faUserGroup } from '@fortawesome/free-solid-svg-icons';
 import Draggable from 'vuedraggable';
 
 const characterStore = useCharacterStore();
@@ -28,7 +28,6 @@ const handleCreateGroup = (groupData: { name: string; characterIds: string[]; ty
   characterStore.createGroup(groupData.name, groupData.type, groupData.characterIds);
   isCreatingGroup.value = false;
 };
-
 </script>
 
 <template>
@@ -57,15 +56,6 @@ const handleCreateGroup = (groupData: { name: string; characterIds: string[]; ty
         <font-awesome-icon :icon="faUserGroup" class="mr-1" />
         <span class="md:hidden">{{ isCreatingGroup ? 'Annuler' : '+ Groupe' }}</span>
         <span class="hidden md:inline">{{ isCreatingGroup ? 'Annuler' : 'Créer un Groupe' }}</span>
-      </button>
-      <button 
-        @click="characterStore.rollAllInitiatives(CharacterType.MONSTER)" 
-        class="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded text-xs md:text-sm flex items-center justify-center whitespace-nowrap min-w-[80px]"
-        title="Lancer l'initiative pour tous les monstres"
-      >
-        <font-awesome-icon :icon="faDiceD20" class="mr-1" />
-        <span class="md:hidden">Init. Tous</span>
-        <span class="hidden md:inline">Initiative Globale</span>
       </button>
     </div>
   </div>

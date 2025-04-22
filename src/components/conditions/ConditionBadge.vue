@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { Condition, getConditionEffects, type ConditionData } from '@/utils/conditionUtils';
+import { Condition, type ConditionData, getConditionEffects } from '@/utils/conditionUtils';
 import { useCharacterStore } from '@/stores/character';
 import Tooltip from '@/components/common/Tooltip.vue';
 

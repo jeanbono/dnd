@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import Tooltip from '@/components/common/Tooltip.vue';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
-import { faDiceD20, faBolt, faSkull } from '@fortawesome/free-solid-svg-icons';
+import { faBolt, faDiceD20, faSkull } from '@fortawesome/free-solid-svg-icons';
 import { useCharacterStore } from '@/stores/character';
 
 const characterStore = useCharacterStore();

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import {ref} from 'vue';
-import {useCharacterStore} from '@/stores/character';
-import {useTurnStore} from '@/stores/turn';
-import {useDialogStore} from '@/stores/dialog';
-import {CharacterType} from "@/types/character.ts";
+import { ref } from 'vue';
+import { useCharacterStore } from '@/stores/character';
+import { useTurnStore } from '@/stores/turn';
+import { useDialogStore } from '@/stores/dialog';
+import { CharacterType } from "@/types/character.ts";
 
 const characterStore = useCharacterStore();
 const turnStore = useTurnStore();

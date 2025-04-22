@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { calculateAbilityModifier } from '@/utils/abilityUtils';
-import { useForm, Field, ErrorMessage } from 'vee-validate';
+import { ErrorMessage, Field, useForm } from 'vee-validate';
 import * as yup from 'yup';
 import type { Character, CharacterType } from "@/types/character.ts";
 

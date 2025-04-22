@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { type Character, CharacterType, type CharacterGroup } from '@/types/character';
+import { type Character, type CharacterGroup, CharacterType } from '@/types/character';
 import { v4 as uuidv4 } from 'uuid';
 import { calculateAbilityModifier } from '@/utils/abilityUtils';
 
@@ -271,7 +271,11 @@ export const useCharacterStore = defineStore('character', () => {
         groupId
       ];
     }
-    
+
+    characterIds.forEach((characterId) => {
+        updateCharacter(characterId, { initiative: initiative })
+    });
+
     return newGroup;
   }
   
