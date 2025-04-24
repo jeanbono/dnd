@@ -135,6 +135,7 @@ function updateGroupName(event: Event) {
         handle=".drag-handle"
         class="space-y-3 group-container"
         ghost-class="bg-gray-100"
+        animation=200
         :group="props.characterType"
         :empty-insert-threshold="40"
       >

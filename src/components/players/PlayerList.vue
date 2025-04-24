@@ -85,6 +85,7 @@ const handleCreateGroup = (groupData: { name: string; characterIds: string[]; ty
       handle=".drag-handle"
       class="space-y-3"
       ghost-class="bg-indigo-100"
+      animation=200
       :group="CharacterType.PLAYER"
   >
     <template #item="{ element }">
