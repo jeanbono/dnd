@@ -5,7 +5,6 @@ import { fileURLToPath, URL } from 'url'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/dnd/', // très important pour GitHub Pages
   plugins: [vue(), tailwind()],
   resolve: {
     alias: {
